@@ -6,6 +6,7 @@ const loginButton = document.getElementById('loginButton');
 const signupModal = document.getElementById('signupModal');
 const loginModal = document.getElementById('loginModal');
 const emailVerificationLoginModal = document.getElementById('emailVerificationLoginModal');
+const invalidVerificationLinkModal = document.getElementById('invalidVerificationLinkModal');
 const hybridRoleModal = document.getElementById('hybridRoleModal');
 
 const closeButtons = document.querySelectorAll('.close-button');
@@ -17,6 +18,7 @@ const emailVerificationLoginForm = document.getElementById('emailVerificationLog
 const signupMessage = document.getElementById('signupMessage');
 const loginMessage = document.getElementById('loginMessage');
 const verificationLoginMessage = document.getElementById('verificationLoginMessage');
+const resendMessage = document.getElementById('resendMessage'); // New message element for resend modal
 
 // Global notification message box (requires HTML element with id="notificationMessageBox")
 const notificationMessageBox = document.getElementById('notificationMessageBox');
@@ -26,6 +28,11 @@ const signupConfirmPassword = document.getElementById('signupConfirmPassword');
 
 const loginAsDriverBtn = document.getElementById('loginAsDriver');
 const loginAsPassengerBtn = document.getElementById('loginAsPassenger');
+
+// New elements for invalidVerificationLinkModal
+const resendEmailInput = document.getElementById('resendEmailInput');
+const resendVerificationButton = document.getElementById('resendVerificationButton');
+
 
 // NCR Cities (Hardcoded for now, could be fetched from an API/DB later)
 const ncrCities = [
@@ -73,6 +80,9 @@ window.addEventListener('click', (event) => {
         clearAllMessages();
     }
     if (event.target == emailVerificationLoginModal) {
+        // Prevent closing by clicking outside for this specific modal
+    }
+    if (event.target == invalidVerificationLinkModal) {
         // Prevent closing by clicking outside for this specific modal
     }
     if (event.target == hybridRoleModal) {
@@ -134,6 +144,8 @@ const clearAllMessages = () => {
     displayModalMessage(signupMessage, '', '');
     displayModalMessage(loginMessage, '', '');
     displayModalMessage(verificationLoginMessage, '', '');
+    displayModalMessage(resendMessage, '', ''); // Clear message in resend modal
+
     if (notificationMessageBox) {
         notificationMessageBox.style.display = 'none';
         notificationMessageBox.style.opacity = '0';
@@ -363,14 +375,60 @@ const handleOobCode = async () => {
 
         } catch (error) {
             console.error("Error applying action code for email verification:", error);
-            let errorMessage = "Error verifying email. The link may be invalid or expired. Please try signing up again or contact support.";
+            // New handling for invalid/expired link
             if (error.code === 'auth/invalid-action-code') {
-                errorMessage = "The verification link is invalid or has expired. Please try signing up again.";
+                clearAllMessages(); // Clear existing messages
+                emailVerificationLoginModal.style.display = 'none'; // Ensure this modal is closed
+                invalidVerificationLinkModal.style.display = 'flex'; // Show the new invalid link modal
+                resendEmailInput.value = ''; // Clear resend email field
+
+                // Note: The message content is now in the HTML directly as per your request
+                // e.g., <p>The verification link is invalid or has expired. Please enter your email to resend a new verification link.</p>
+
+                // Add event listener for the "Resend Verification Link" button
+                resendVerificationButton.onclick = async () => {
+                    clearAllMessages(); // Clear any messages in the resend modal
+                    const emailToResend = resendEmailInput.value;
+                    if (!emailToResend) {
+                        displayModalMessage(resendMessage, 'Please enter your email address.', 'error');
+                        return;
+                    }
+
+                    try {
+                        // Use sendPasswordResetEmail as a mechanism to resend a link that also verifies
+                        await auth.sendPasswordResetEmail(emailToResend);
+                        resendEmailInput.value = ''; // Clear field on successful send
+
+                        // Display global notification for successful resend
+                        displayGlobalNotification(
+                            'New verification link sent! Please check your email.',
+                            'success',
+                            () => { // Callback when this global notification is closed
+                                invalidVerificationLinkModal.style.display = 'none'; // Close resend modal
+                                loginModal.style.display = 'flex'; // Route to main login form
+                                clearAllMessages(); // Clear all messages
+                            }
+                        );
+
+                    } catch (resendError) {
+                        console.error("Error resending verification link:", resendError);
+                        let resendErrorMessage = "Failed to send new verification link. Please check the email or try again.";
+                        if (resendError.code === 'auth/user-not-found') {
+                            resendErrorMessage = 'No user found with that email address.';
+                        } else if (resendError.code === 'auth/invalid-email') {
+                            resendErrorMessage = 'Please enter a valid email address.';
+                        }
+                        displayModalMessage(resendMessage, resendErrorMessage, 'error');
+                    }
+                };
+
             } else if (error.code === 'auth/user-disabled') {
-                errorMessage = "Your account has been disabled.";
+                displayModalMessage(loginMessage, "Your account has been disabled. Please contact support.", 'error');
+                loginModal.style.display = 'flex'; // Show main login if an error occurs
+            } else {
+                 displayModalMessage(loginMessage, "An unexpected error occurred during verification. Please try logging in.", 'error');
+                 loginModal.style.display = 'flex'; // Show main login if an error occurs
             }
-            displayModalMessage(loginMessage, errorMessage, 'error'); // Show error on main login modal if this fails
-            loginModal.style.display = 'flex'; // Show main login if an error occurs
         }
     }
 };

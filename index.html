@@ -104,8 +104,8 @@
     <!-- Email Verification Login Modal -->
     <div id="emailVerificationLoginModal" class="modal">
         <div class="modal-content">
-            <h2>Email Verification</h2>
-            <p>To proceed with full verification and initiate the account review process, kindly enter your credentials below:</p>
+            <h2>Email Verified!</h2>
+            <p>To be completely verified and progress to account activation, logging in with your credential is required!</p>
             <form id="emailVerificationLoginForm">
                 <label for="verificationEmail">Email:</label>
                 <input type="email" id="verificationEmail" required>
@@ -116,6 +116,19 @@
                 <button type="submit">Log In to Verify</button>
             </form>
             <div id="verificationLoginMessage" class="message-box"></div>
+        </div>
+    </div>
+
+    <!-- Invalid Link / Resend Modal -->
+    <div id="invalidVerificationLinkModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
+            <h2>Verification Link Invalid / Expired</h2>
+            <p>The verification link is invalid or has expired. Please enter your email to resend a new verification link.</p>
+            <label for="resendEmailInput">Email:</label>
+            <input type="email" id="resendEmailInput" required>
+            <button id="resendVerificationButton">Resend Verification Link</button>
+            <div id="resendMessage" class="message-box"></div>
         </div>
     </div>
 
