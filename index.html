@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Share A Ride</title>
+    <link rel="stylesheet" href="css/style.css">
+    <!-- Firebase SDKs - Add these to your head section -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+</head>
+<body>
+    <header>
+        <h1>Share A Ride</h1>
+        <nav>
+            <button id="signupButton">Sign Up</button>
+            <button id="loginButton">Log In</button>
+        </nav>
+    </header>
+
+    <main>
+        <p>Welcome to Share A Ride! Find or offer rides easily.</p>
+        <!-- Your main content here -->
+    </main>
+
+    <!-- Signup Modal -->
+    <div id="signupModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
+            <h2>Sign Up</h2>
+            <form id="signupForm">
+                <label for="signupFirstName">First Name:</label>
+                <input type="text" id="signupFirstName" required>
+
+                <label for="signupLastName">Last Name:</label>
+                <input type="text" id="signupLastName" required>
+
+                <label for="signupGender">Gender:</label>
+                <select id="signupGender" required>
+                    <option value="">Select Gender</option>
+                    <option value="male">Male</option>
+                    <option value="female">Female</option>
+                    <option value="other">Other</option>
+                </select>
+
+                <label for="signupMobile">Mobile Number (11 digits):</label>
+                <input type="text" id="signupMobile" pattern="[0-9]{11}" maxlength="11" title="Please enter 11 digits" required>
+
+                <label for="signupEmail">Email:</label>
+                <input type="email" id="signupEmail" required>
+
+                <label for="signupFacebook">Facebook Profile Link (optional):</label>
+                <input type="url" id="signupFacebook">
+
+                <label for="signupRole">Role:</label>
+                <select id="signupRole" required>
+                    <option value="">Select Role</option>
+                    <option value="driver">Driver</option>
+                    <option value="passenger">Passenger</option>
+                    <option value="hybrid">Hybrid</option>
+                </select>
+
+                <label for="signupCity">City (NCR):</label>
+                <select id="signupCity" required>
+                    <option value="">Select City</option>
+                    <!-- NCR Cities will be populated by JavaScript -->
+                </select>
+
+                <label for="signupPassword">Password:</label>
+                <input type="password" id="signupPassword" minlength="10" maxlength="16" required>
+                <div id="passwordStrength" class="password-strength"></div>
+
+                <label for="signupConfirmPassword">Confirm Password:</label>
+                <input type="password" id="signupConfirmPassword" minlength="10" maxlength="16" required>
+
+                <button type="submit">Sign Up</button>
+            </form>
+            <div id="signupMessage" class="message-box"></div>
+        </div>
+    </div>
+
+    <!-- Main Login Modal -->
+    <div id="loginModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
+            <h2>Log In</h2>
+            <form id="loginForm">
+                <label for="loginEmail">Email:</label>
+                <input type="email" id="loginEmail" required>
+
+                <label for="loginPassword">Password:</label>
+                <input type="password" id="loginPassword" required>
+
+                <button type="submit">Log In</button>
+            </form>
+            <div id="loginMessage" class="message-box"></div>
+        </div>
+    </div>
+
+    <!-- Email Verification Login Modal -->
+    <div id="emailVerificationLoginModal" class="modal">
+        <div class="modal-content">
+            <h2>Email Verified!</h2>
+            <p>To be completely verified and progress to account activation, logging in with your credential is required!</p>
+            <form id="emailVerificationLoginForm">
+                <label for="verificationEmail">Email:</label>
+                <input type="email" id="verificationEmail" required>
+
+                <label for="verificationPassword">Password:</label>
+                <input type="password" id="verificationPassword" required>
+
+                <button type="submit">Log In to Verify</button>
+            </form>
+            <div id="verificationLoginMessage" class="message-box"></div>
+        </div>
+    </div>
+
+    <!-- Hybrid Role Selection Modal -->
+    <div id="hybridRoleModal" class="modal">
+        <div class="modal-content">
+            <h2>Choose Your Role</h2>
+            <p>You have a hybrid account. How would you like to log in?</p>
+            <button id="loginAsDriver">Log In as Driver</button>
+            <button id="loginAsPassenger">Log In as Passenger</button>
+        </div>
+    </div>
+
+    <script src="js/auth.js" type="module"></script>
+    <script src="js/script.js" type="module"></script>
+</body>
+</html>
