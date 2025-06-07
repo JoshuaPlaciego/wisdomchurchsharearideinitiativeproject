@@ -13,9 +13,13 @@ const signupForm = document.getElementById('signupForm');
 const loginForm = document.getElementById('loginForm');
 const emailVerificationLoginForm = document.getElementById('emailVerificationLoginForm');
 
+// Message elements directly within modals
 const signupMessage = document.getElementById('signupMessage');
 const loginMessage = document.getElementById('loginMessage');
 const verificationLoginMessage = document.getElementById('verificationLoginMessage');
+
+// Global notification message box (requires HTML element with id="notificationMessageBox")
+const notificationMessageBox = document.getElementById('notificationMessageBox');
 
 const signupPassword = document.getElementById('signupPassword');
 const signupConfirmPassword = document.getElementById('signupConfirmPassword');
@@ -42,31 +46,31 @@ ncrCities.forEach(city => {
 // Event Listeners for Modals
 signupButton.addEventListener('click', () => {
     signupModal.style.display = 'flex';
-    signupMessage.style.display = 'none'; // Clear previous messages
+    displayModalMessage(signupMessage, '', ''); // Clear previous messages
     signupForm.reset(); // Clear form fields
 });
 
 loginButton.addEventListener('click', () => {
     loginModal.style.display = 'flex';
-    loginMessage.style.display = 'none'; // Clear previous messages
+    displayModalMessage(loginMessage, '', ''); // Clear previous messages
     loginForm.reset(); // Clear form fields
 });
 
 closeButtons.forEach(button => {
     button.addEventListener('click', () => {
         button.closest('.modal').style.display = 'none';
-        clearMessages();
+        clearAllMessages(); // Clear all messages, including global
     });
 });
 
 window.addEventListener('click', (event) => {
     if (event.target == signupModal) {
         signupModal.style.display = 'none';
-        clearMessages();
+        clearAllMessages();
     }
     if (event.target == loginModal) {
         loginModal.style.display = 'none';
-        clearMessages();
+        clearAllMessages();
     }
     if (event.target == emailVerificationLoginModal) {
         // Prevent closing by clicking outside for this specific modal
@@ -82,23 +86,63 @@ signupPassword.addEventListener('input', () => {
 });
 
 
-// Helper to display messages
-const showMessage = (element, message, type) => {
+// Helper to display messages within a specific modal element
+const displayModalMessage = (element, message, type) => {
     element.textContent = message;
     element.className = `message-box ${type}`;
-    element.style.display = 'block';
+    element.style.display = message ? 'block' : 'none'; // Only show if message is not empty
 };
 
-const clearMessages = () => {
-    signupMessage.style.display = 'none';
-    loginMessage.style.display = 'none';
-    verificationLoginMessage.style.display = 'none';
+// Helper to display a global notification message that auto-hides
+const displayGlobalNotification = (message, type) => { // Removed duration parameter
+    if (!notificationMessageBox) {
+        console.warn("Global notification message box element not found.");
+        return;
+    }
+    // Clear any previous content and close button
+    notificationMessageBox.innerHTML = '';
+    notificationMessageBox.textContent = message;
+    notificationMessageBox.className = `global-message-box ${type}`;
+    notificationMessageBox.style.display = 'flex'; // Use flex to align message and close button
+    notificationMessageBox.style.opacity = '1';
+
+    // Create a close icon
+    const closeIcon = document.createElement('span');
+    closeIcon.textContent = '✖'; // Unicode multiplication sign for a common close icon
+    closeIcon.className = 'global-message-close-icon'; // Add a class for styling
+    closeIcon.style.cursor = 'pointer';
+    closeIcon.style.marginLeft = '10px'; // Space from message
+    closeIcon.style.fontWeight = 'bold'; // Make it stand out
+    closeIcon.style.fontSize = '1.2em'; // Adjust size
+
+    closeIcon.onclick = () => {
+        notificationMessageBox.style.opacity = '0';
+        setTimeout(() => {
+            notificationMessageBox.style.display = 'none';
+            notificationMessageBox.innerHTML = ''; // Clear content
+        }, 300); // Small delay for fade out effect
+    };
+
+    notificationMessageBox.appendChild(closeIcon);
 };
+
+// Clears all message boxes
+const clearAllMessages = () => {
+    displayModalMessage(signupMessage, '', '');
+    displayModalMessage(loginMessage, '', '');
+    displayModalMessage(verificationLoginMessage, '', '');
+    if (notificationMessageBox) {
+        notificationMessageBox.style.display = 'none';
+        notificationMessageBox.style.opacity = '0';
+        notificationMessageBox.innerHTML = ''; // Clear content
+    }
+};
+
 
 // --- Signup Form Submission ---
 signupForm.addEventListener('submit', async (e) => {
     e.preventDefault();
-    clearMessages();
+    clearAllMessages(); // Clear all previous messages
 
     const firstName = document.getElementById('signupFirstName').value;
     const lastName = document.getElementById('signupLastName').value;
@@ -112,14 +156,14 @@ signupForm.addEventListener('submit', async (e) => {
     const confirmPassword = signupConfirmPassword.value;
 
     if (password !== confirmPassword) {
-        showMessage(signupMessage, 'Passwords do not match.', 'error');
+        displayModalMessage(signupMessage, 'Passwords do not match.', 'error');
         return;
     }
 
     // Basic password strength check (more robust logic in auth.js)
     const passwordRegex = /^(?=.*[0-9])(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?])(?=.*[A-Z]).{10,16}$/;
     if (!passwordRegex.test(password)) {
-        showMessage(signupMessage, 'Password must be 10-16 alphanumeric characters, contain at least 1 symbol, 1 numeric, and 1 capital letter.', 'error');
+        displayModalMessage(signupMessage, 'Password must be 10-16 alphanumeric characters, contain at least 1 symbol, 1 numeric, and 1 capital letter.', 'error');
         return;
     }
 
@@ -144,8 +188,8 @@ signupForm.addEventListener('submit', async (e) => {
             createdAt: firebase.firestore.FieldValue.serverTimestamp()
         });
 
-        showMessage(signupMessage, 'Signup successful! Please check your email for a verification link.', 'success');
-        signupForm.reset(); // Clear form
+        displayGlobalNotification('Signup successful! Please check your email for a verification link.', 'success');
+        signupForm.reset(); // Clear form fields after successful signup
         signupModal.style.display = 'none'; // Close signup modal
         loginModal.style.display = 'flex'; // Go back to main login form modal
 
@@ -159,14 +203,14 @@ signupForm.addEventListener('submit', async (e) => {
         } else if (error.code === 'auth/weak-password') {
              errorMessage = 'Password is too weak.';
         }
-        showMessage(signupMessage, errorMessage, 'error');
+        displayModalMessage(signupMessage, errorMessage, 'error');
     }
 });
 
 // --- Email Verification Login Form Submission (triggered after email link click) ---
 emailVerificationLoginForm.addEventListener('submit', async (e) => {
     e.preventDefault();
-    clearMessages();
+    clearAllMessages(); // Clear all previous messages
 
     const email = document.getElementById('verificationEmail').value;
     const password = document.getElementById('verificationPassword').value;
@@ -181,7 +225,10 @@ emailVerificationLoginForm.addEventListener('submit', async (e) => {
                 accountStatus: 'Awaiting Admin Approval'
             });
 
-            showMessage(verificationLoginMessage, 'Account successfully verified! Awaiting admin approval. Click "Close" to proceed to the main login form.', 'success');
+            displayGlobalNotification('Account successfully verified! Awaiting admin approval. You can now log in.', 'success');
+            emailVerificationLoginForm.reset(); // Clear form fields after successful verification login
+
+            displayModalMessage(verificationLoginMessage, 'Account successfully verified! Awaiting admin approval. Click "Close" to proceed to the main login form.', 'success');
 
             // Add a close button to the message box
             const closeBtn = document.createElement('button');
@@ -190,7 +237,7 @@ emailVerificationLoginForm.addEventListener('submit', async (e) => {
             closeBtn.onclick = () => {
                 emailVerificationLoginModal.style.display = 'none';
                 loginModal.style.display = 'flex'; // Redirect to main login form modal
-                clearMessages();
+                clearAllMessages(); // Clear all messages after closing the modal
                 // Remove the close button to prevent duplicates if the message is redisplayed
                 if (closeBtn.parentNode) {
                     closeBtn.parentNode.removeChild(closeBtn);
@@ -199,8 +246,8 @@ emailVerificationLoginForm.addEventListener('submit', async (e) => {
             verificationLoginMessage.appendChild(closeBtn);
 
         } else {
-            showMessage(verificationLoginMessage, 'Email not verified. Please check your email for the verification link.', 'error');
-            emailVerificationLoginForm.reset();
+            displayModalMessage(verificationLoginMessage, 'Email not verified. Please check your email for the verification link.', 'error');
+            emailVerificationLoginForm.reset(); // Clear fields on error
         }
 
     } catch (error) {
@@ -209,7 +256,7 @@ emailVerificationLoginForm.addEventListener('submit', async (e) => {
         if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
             errorMessage = 'Invalid email or password.';
         }
-        showMessage(verificationLoginMessage, errorMessage, 'error');
+        displayModalMessage(verificationLoginMessage, errorMessage, 'error');
         emailVerificationLoginForm.reset(); // Clear fields on error
     }
 });
@@ -217,7 +264,7 @@ emailVerificationLoginForm.addEventListener('submit', async (e) => {
 // --- Main Login Form Submission ---
 loginForm.addEventListener('submit', async (e) => {
     e.preventDefault();
-    clearMessages();
+    clearAllMessages(); // Clear all previous messages
 
     const email = document.getElementById('loginEmail').value;
     const password = document.getElementById('loginPassword').value;
@@ -227,17 +274,17 @@ loginForm.addEventListener('submit', async (e) => {
         const user = userCredential.user;
 
         if (!user.emailVerified) {
-            showMessage(loginMessage, 'Email not verified. Please check your email for the verification link and complete the verification login.', 'error');
-            loginForm.reset();
+            displayModalMessage(loginMessage, 'Email not verified. Please check your email for the verification link and complete the verification login.', 'error');
+            loginForm.reset(); // Clear fields
             return;
         }
 
         // Get user data from Firestore
         const userDoc = await db.collection('users').doc(user.uid).get();
         if (!userDoc.exists) {
-            showMessage(loginMessage, 'User data not found. Please contact support.', 'error');
+            displayModalMessage(loginMessage, 'User data not found. Please contact support.', 'error');
             auth.signOut(); // Log out the user if data is missing
-            loginForm.reset();
+            loginForm.reset(); // Clear fields
             return;
         }
 
@@ -246,24 +293,29 @@ loginForm.addEventListener('submit', async (e) => {
         const userRole = userData.role;
 
         if (accountStatus === 'Access Granted') {
-            // Check user role and redirect
+            displayGlobalNotification('Login successful! Redirecting to dashboard.', 'success');
+            loginForm.reset(); // Clear fields after successful login
             loginModal.style.display = 'none';
-            if (userRole === 'driver') {
-                window.location.href = 'driverdashboard.html'; // Create this page later
-            } else if (userRole === 'passenger') {
-                window.location.href = 'passengerdashboard.html'; // Changed from riderdashboard.html
-            } else if (userRole === 'hybrid') {
-                hybridRoleModal.style.display = 'flex';
-            }
+            // Slight delay before redirection to allow global notification to be seen
+            setTimeout(() => {
+                if (userRole === 'driver') {
+                    window.location.href = 'driverdashboard.html';
+                } else if (userRole === 'passenger') {
+                    window.location.href = 'passengerdashboard.html';
+                } else if (userRole === 'hybrid') {
+                    hybridRoleModal.style.display = 'flex';
+                }
+            }, 500); // 0.5 second delay
+
         } else if (accountStatus === 'Awaiting Email Verification') {
-            showMessage(loginMessage, 'Your account is awaiting email verification. Please check your email.', 'error');
-            loginForm.reset();
+            displayModalMessage(loginMessage, 'Your account is awaiting email verification. Please check your email.', 'error');
+            loginForm.reset(); // Clear fields
         } else if (accountStatus === 'Awaiting Admin Approval') {
-            showMessage(loginMessage, 'Your account is awaiting admin approval. Please wait patiently.', 'error');
-            loginForm.reset();
+            displayModalMessage(loginMessage, 'Your account is awaiting admin approval. Please wait patiently.', 'error');
+            loginForm.reset(); // Clear fields
         } else {
-            showMessage(loginMessage, `Your account status is "${accountStatus}". Please contact support.`, 'error');
-            loginForm.reset();
+            displayModalMessage(loginMessage, `Your account status is "${accountStatus}". Please contact support.`, 'error');
+            loginForm.reset(); // Clear fields
         }
 
     } catch (error) {
@@ -274,7 +326,7 @@ loginForm.addEventListener('submit', async (e) => {
         } else if (error.code === 'auth/invalid-credential') {
              errorMessage = 'Invalid email or password.'; // Newer Firebase versions use this
         }
-        showMessage(loginMessage, errorMessage, 'error');
+        displayModalMessage(loginMessage, errorMessage, 'error');
         loginForm.reset(); // Clear fields on error
     }
 });
@@ -313,7 +365,7 @@ const handleOobCode = async () => {
             if (currentUser && currentUser.email) {
                 document.getElementById('verificationEmail').value = currentUser.email;
             }
-            showMessage(verificationLoginMessage, 'Email verified! Please log in to complete account activation.', 'success');
+            displayModalMessage(verificationLoginMessage, 'Email verified! Please log in to complete account activation.', 'success');
 
         } catch (error) {
             console.error("Error applying action code for email verification:", error);
@@ -323,7 +375,7 @@ const handleOobCode = async () => {
             } else if (error.code === 'auth/user-disabled') {
                 errorMessage = "Your account has been disabled.";
             }
-            showMessage(loginMessage, errorMessage, 'error'); // Show on main login modal or a general message area
+            displayModalMessage(loginMessage, errorMessage, 'error'); // Show error on main login modal if this fails
             loginModal.style.display = 'flex'; // Show main login if an error occurs
         }
     }

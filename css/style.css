@@ -154,3 +154,45 @@ form button:hover {
 .password-strength.weak { background-color: red; }
 .password-strength.medium { background-color: orange; }
 .password-strength.strong { background-color: green; }
+
+/* Global Notification Box Styles */
+.global-message-box {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1000; /* Ensure it's on top of other content */
+    padding: 15px 25px;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    display: none; /* Hidden by default, JavaScript will show */
+    align-items: center; /* Align message and close icon vertically */
+    justify-content: space-between; /* Space out message and close icon */
+    min-width: 300px;
+    max-width: 90%; /* Prevent it from being too wide on small screens */
+    transition: opacity 0.3s ease-in-out; /* Smooth fade effect */
+}
+
+.global-message-box.success {
+    background-color: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.global-message-box.error {
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+.global-message-close-icon {
+    font-size: 1.2em;
+    font-weight: bold;
+    margin-left: 15px;
+    cursor: pointer;
+    color: inherit; /* Inherit color from parent message box */
+}
+
+.global-message-close-icon:hover {
+    opacity: 0.7;
+}
