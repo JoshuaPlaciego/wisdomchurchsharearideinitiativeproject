@@ -492,10 +492,9 @@ const handleOobCode = async () => {
             }
         } else if (mode === 'resetPassword') { // Handle password reset links
             try {
-                // Verify the password reset code first to ensure it's valid
-                // This implicitly confirms the email is linked and valid for reset.
-                await auth.verifyPasswordResetCode(oobCode);
-                console.log("Password reset code verified. Proceed to set new password.");
+                // Use checkActionCode to verify the validity of the oobCode without consuming it
+                await auth.checkActionCode(oobCode);
+                console.log("Password reset code checked and is valid. Proceed to set new password.");
 
                 clearAllMessages();
                 invalidVerificationLinkModal.style.display = 'none'; // Close any other modals
@@ -506,11 +505,11 @@ const handleOobCode = async () => {
                 displayModalMessage(resetPasswordMessage, '', ''); // Clear message
                 newPasswordStrength.className = 'password-strength'; // Reset strength indicator
 
-                // The oobCode is now globally stored by handleOobCode, so resetPasswordForm can use it.
+                // The oobCode is already globally stored by handleOobCode (currentOobCode = oobCode;)
                 history.replaceState({}, document.title, window.location.pathname); // Clear URL parameters
 
             } catch (error) {
-                console.error("Error verifying password reset code:", error);
+                console.error("Error checking password reset code:", error);
                 clearAllMessages();
                 invalidVerificationLinkModal.style.display = 'flex'; // Show invalid link modal
                 resendEmailInput.value = ''; // Clear email field in resend modal
