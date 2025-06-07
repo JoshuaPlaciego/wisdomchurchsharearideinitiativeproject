@@ -2,7 +2,7 @@ import { auth, db, sendVerificationEmail, checkPasswordStrength } from './auth.j
 
 // Get elements
 const signupButton = document.getElementById('signupButton');
-const loginButton = document.getElementById('loginButton');
+const loginButton = document = document.getElementById('loginButton');
 const signupModal = document.getElementById('signupModal');
 const loginModal = document.getElementById('loginModal');
 const emailVerificationLoginModal = document.getElementById('emailVerificationLoginModal');
@@ -41,6 +41,7 @@ const resendEmailInput = document.getElementById('resendEmailInput');
 const resendVerificationButton = document.getElementById('resendVerificationButton');
 
 let currentOobCode = null; // Store the oobCode globally for use in password reset form
+let oobCodeEmail = null; // New global variable to store email from oobCode
 
 
 // NCR Cities (Hardcoded for now, could be fetched from an API/DB later)
@@ -317,19 +318,23 @@ resetPasswordForm.addEventListener('submit', async (e) => {
         await auth.confirmPasswordReset(currentOobCode, newPass);
 
         // After successful password reset and implied email verification, update Firestore status
-        // We need to retrieve the email associated with the oobCode first
-        const email = await auth.verifyPasswordResetCode(currentOobCode);
-        const userDocs = await db.collection('users').where('email', '==', email).get();
+        // Use the globally stored oobCodeEmail
+        if (oobCodeEmail) { // Ensure oobCodeEmail is available from handleOobCode
+            const userDocs = await db.collection('users').where('email', '==', oobCodeEmail).get();
 
-        if (!userDocs.empty) {
-            const userId = userDocs.docs[0].id;
-            await db.collection('users').doc(userId).update({
-                accountStatus: 'Awaiting Admin Approval'
-            });
-             console.log("Firestore status updated to Awaiting Admin Approval after password reset verification.");
+            if (!userDocs.empty) {
+                const userId = userDocs.docs[0].id;
+                await db.collection('users').doc(userId).update({
+                    accountStatus: 'Awaiting Admin Approval'
+                });
+                console.log("Firestore status updated to Awaiting Admin Approval after password reset verification for:", oobCodeEmail);
+            } else {
+                console.warn("User not found in Firestore for email:", oobCodeEmail, ". Status not updated.");
+            }
         } else {
-             console.warn("User not found in Firestore after password reset. Status not updated.");
+             console.warn("oobCodeEmail was not set. Cannot update Firestore status.");
         }
+
 
         resetPasswordForm.reset(); // Clear form fields
         resetPasswordAndVerifyModal.style.display = 'none'; // Close modal
@@ -347,7 +352,7 @@ resetPasswordForm.addEventListener('submit', async (e) => {
         console.error("Error setting new password and verifying:", error);
         let errorMessage = "Failed to set new password. The link might be invalid or expired. Please try resending.";
         if (error.code === 'auth/invalid-action-code') {
-            errorMessage = 'The link is invalid or has expired.';
+            errorMessage = 'The link is invalid or has already been used. Please try resending a new link.';
         } else if (error.code === 'auth/user-disabled') {
             errorMessage = 'Your account has been disabled.';
         } else if (error.code === 'auth/weak-password') {
@@ -486,8 +491,9 @@ const handleOobCode = async () => {
         } else if (mode === 'resetPassword') { // Handle password reset links
             try {
                 // Use checkActionCode to verify the validity of the oobCode without consuming it
-                await auth.checkActionCode(oobCode);
-                console.log("Password reset code checked and is valid. Proceed to set new password.");
+                const info = await auth.checkActionCode(oobCode); // This returns ActionCodeInfo
+                oobCodeEmail = info.data.email; // Store the email associated with the oobCode
+                console.log("Password reset code checked and is valid. Email:", oobCodeEmail, ". Proceed to set new password.");
 
                 clearAllMessages();
                 invalidVerificationLinkModal.style.display = 'none'; // Close any other modals
