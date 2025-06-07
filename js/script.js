@@ -181,7 +181,7 @@ emailVerificationLoginForm.addEventListener('submit', async (e) => {
                 accountStatus: 'Awaiting Admin Approval'
             });
 
-            showMessage(verificationLoginMessage, 'Account successfully verified! Awaiting admin approval. You can close this window.', 'success');
+            showMessage(verificationLoginMessage, 'Account successfully verified! Awaiting admin approval. Click "Close" to proceed to the main login form.', 'success');
 
             // Add a close button to the message box
             const closeBtn = document.createElement('button');
@@ -191,6 +191,10 @@ emailVerificationLoginForm.addEventListener('submit', async (e) => {
                 emailVerificationLoginModal.style.display = 'none';
                 loginModal.style.display = 'flex'; // Redirect to main login form modal
                 clearMessages();
+                // Remove the close button to prevent duplicates if the message is redisplayed
+                if (closeBtn.parentNode) {
+                    closeBtn.parentNode.removeChild(closeBtn);
+                }
             };
             verificationLoginMessage.appendChild(closeBtn);
 
