@@ -94,7 +94,7 @@ const displayModalMessage = (element, message, type) => {
 };
 
 // Helper to display a global notification message that auto-hides
-const displayGlobalNotification = (message, type) => { // Removed duration parameter
+const displayGlobalNotification = (message, type, onCloseCallback = null) => { // Added onCloseCallback
     if (!notificationMessageBox) {
         console.warn("Global notification message box element not found.");
         return;
@@ -120,6 +120,9 @@ const displayGlobalNotification = (message, type) => { // Removed duration param
         setTimeout(() => {
             notificationMessageBox.style.display = 'none';
             notificationMessageBox.innerHTML = ''; // Clear content
+            if (onCloseCallback) { // Execute callback when notification is closed
+                onCloseCallback();
+            }
         }, 300); // Small delay for fade out effect
     };
 
@@ -228,26 +231,15 @@ emailVerificationLoginForm.addEventListener('submit', async (e) => {
             emailVerificationLoginForm.reset(); // Clear form fields after successful verification login
             emailVerificationLoginModal.style.display = 'none'; // Close the verification login modal
 
-            // Display the new message in a modal-like fashion (using loginModal for this)
-            // or you could introduce a new dedicated modal for this specific message.
-            // For now, let's keep it consistent and use loginModal for redirection.
-            loginModal.style.display = 'flex'; // Show main login modal
-            displayModalMessage(loginMessage, 'Your account has been successfully verified and is now awaiting Admin approval. Please reach out to the Admin Team.', 'success');
-
-            // Add a close button to the login message box
-            const closeBtn = document.createElement('button');
-            closeBtn.textContent = 'Close';
-            closeBtn.className = 'mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600'; // Basic styling for the button
-            closeBtn.onclick = () => {
-                loginModal.style.display = 'none'; // Close main login modal
-                clearAllMessages(); // Clear all messages
-                // Remove the close button to prevent duplicates
-                if (closeBtn.parentNode) {
-                    closeBtn.parentNode.removeChild(closeBtn);
+            // Display the new global notification message
+            displayGlobalNotification(
+                'Your account has been fully verified and is now awaiting Admin approval. Once approved, you may log in to your account and enjoy!',
+                'success',
+                () => { // Callback function to run when the global notification is closed
+                    loginModal.style.display = 'flex'; // Show main login modal
+                    clearAllMessages(); // Clear messages after opening the main login modal
                 }
-            };
-            loginMessage.appendChild(closeBtn);
-
+            );
 
         } else {
             displayModalMessage(verificationLoginMessage, 'Email not verified. Please check your email for the verification link.', 'error');
