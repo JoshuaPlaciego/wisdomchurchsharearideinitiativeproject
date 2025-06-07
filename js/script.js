@@ -225,25 +225,29 @@ emailVerificationLoginForm.addEventListener('submit', async (e) => {
                 accountStatus: 'Awaiting Admin Approval'
             });
 
-            displayGlobalNotification('Account successfully verified! Awaiting admin approval. You can now log in.', 'success');
             emailVerificationLoginForm.reset(); // Clear form fields after successful verification login
+            emailVerificationLoginModal.style.display = 'none'; // Close the verification login modal
 
-            displayModalMessage(verificationLoginMessage, 'Account successfully verified! Awaiting admin approval. Click "Close" to proceed to the main login form.', 'success');
+            // Display the new message in a modal-like fashion (using loginModal for this)
+            // or you could introduce a new dedicated modal for this specific message.
+            // For now, let's keep it consistent and use loginModal for redirection.
+            loginModal.style.display = 'flex'; // Show main login modal
+            displayModalMessage(loginMessage, 'Your account has been successfully verified and is now awaiting Admin approval. Please reach out to the Admin Team.', 'success');
 
-            // Add a close button to the message box
+            // Add a close button to the login message box
             const closeBtn = document.createElement('button');
             closeBtn.textContent = 'Close';
             closeBtn.className = 'mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600'; // Basic styling for the button
             closeBtn.onclick = () => {
-                emailVerificationLoginModal.style.display = 'none';
-                loginModal.style.display = 'flex'; // Redirect to main login form modal
-                clearAllMessages(); // Clear all messages after closing the modal
-                // Remove the close button to prevent duplicates if the message is redisplayed
+                loginModal.style.display = 'none'; // Close main login modal
+                clearAllMessages(); // Clear all messages
+                // Remove the close button to prevent duplicates
                 if (closeBtn.parentNode) {
                     closeBtn.parentNode.removeChild(closeBtn);
                 }
             };
-            verificationLoginMessage.appendChild(closeBtn);
+            loginMessage.appendChild(closeBtn);
+
 
         } else {
             displayModalMessage(verificationLoginMessage, 'Email not verified. Please check your email for the verification link.', 'error');
@@ -323,8 +327,6 @@ loginForm.addEventListener('submit', async (e) => {
         let errorMessage = "Invalid email or password.";
         if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
             errorMessage = 'Invalid email or password.';
-        } else if (error.code === 'auth/invalid-credential') {
-             errorMessage = 'Invalid email or password.'; // Newer Firebase versions use this
         }
         displayModalMessage(loginMessage, errorMessage, 'error');
         loginForm.reset(); // Clear fields on error
