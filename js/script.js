@@ -475,20 +475,13 @@ const handleOobCode = async () => {
 
             } catch (error) {
                 console.error("Error applying action code for email verification:", error);
+                // ALL errors related to oobCode (regardless of specific error code) should lead to invalidVerificationLinkModal
                 clearAllMessages(); // Clear existing messages
                 emailVerificationLoginModal.style.display = 'none'; // Ensure this modal is closed
+                loginModal.style.display = 'none'; // Ensure main login modal is closed
 
-                // Specific handling for invalid_action_code
-                if (error.code === 'auth/invalid-action-code') {
-                    invalidVerificationLinkModal.style.display = 'flex'; // Show the new invalid link modal
-                    resendEmailInput.value = ''; // Clear resend email field
-                } else if (error.code === 'auth/user-disabled') {
-                    displayModalMessage(loginMessage, "Your account has been disabled. Please contact support.", 'error');
-                    loginModal.style.display = 'flex';
-                } else {
-                    displayModalMessage(loginMessage, "An unexpected error occurred during verification. Please try logging in.", 'error');
-                    loginModal.style.display = 'flex';
-                }
+                invalidVerificationLinkModal.style.display = 'flex'; // Always show the new invalid link modal
+                resendEmailInput.value = ''; // Clear resend email field in case it was pre-filled
             }
         } else if (mode === 'resetPassword') { // Handle password reset links
             try {
@@ -499,6 +492,7 @@ const handleOobCode = async () => {
                 clearAllMessages();
                 invalidVerificationLinkModal.style.display = 'none'; // Close any other modals
                 emailVerificationLoginModal.style.display = 'none';
+                loginModal.style.display = 'none'; // Ensure main login modal is closed
 
                 resetPasswordAndVerifyModal.style.display = 'flex'; // Show the new password reset modal
                 resetPasswordForm.reset(); // Clear new password fields
@@ -510,19 +504,13 @@ const handleOobCode = async () => {
 
             } catch (error) {
                 console.error("Error checking password reset code:", error);
+                // ALL errors related to oobCode (regardless of specific error code) should lead to invalidVerificationLinkModal
                 clearAllMessages();
-                invalidVerificationLinkModal.style.display = 'flex'; // Show invalid link modal
-                resendEmailInput.value = ''; // Clear email field in resend modal
+                invalidVerificationLinkModal.style.display = 'flex'; // Always show invalid link modal
+                emailVerificationLoginModal.style.display = 'none'; // Ensure this modal is closed
+                loginModal.style.display = 'none'; // Ensure main login modal is closed
 
-                if (error.code === 'auth/invalid-action-code') {
-                    // Message already in HTML for invalidVerificationLinkModal
-                } else if (error.code === 'auth/user-disabled') {
-                    displayModalMessage(loginMessage, "Your account has been disabled. Please contact support.", 'error');
-                    loginModal.style.display = 'flex';
-                } else {
-                    displayModalMessage(loginMessage, "An unexpected error occurred. Please try logging in.", 'error');
-                    loginModal.style.display = 'flex';
-                }
+                resendEmailInput.value = ''; // Clear email field in resend modal
             }
         }
     }
