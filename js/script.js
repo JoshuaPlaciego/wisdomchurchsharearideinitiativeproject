@@ -7,18 +7,21 @@ const signupModal = document.getElementById('signupModal');
 const loginModal = document.getElementById('loginModal');
 const emailVerificationLoginModal = document.getElementById('emailVerificationLoginModal');
 const invalidVerificationLinkModal = document.getElementById('invalidVerificationLinkModal');
+const resetPasswordAndVerifyModal = document.getElementById('resetPasswordAndVerifyModal'); // New modal element
 const hybridRoleModal = document.getElementById('hybridRoleModal');
 
 const closeButtons = document.querySelectorAll('.close-button');
 const signupForm = document.getElementById('signupForm');
 const loginForm = document.getElementById('loginForm');
 const emailVerificationLoginForm = document.getElementById('emailVerificationLoginForm');
+const resetPasswordForm = document.getElementById('resetPasswordForm'); // New form element
 
 // Message elements directly within modals
 const signupMessage = document.getElementById('signupMessage');
 const loginMessage = document.getElementById('loginMessage');
 const verificationLoginMessage = document.getElementById('verificationLoginMessage');
-const resendMessage = document.getElementById('resendMessage'); // New message element for resend modal
+const resendMessage = document.getElementById('resendMessage');
+const resetPasswordMessage = document.getElementById('resetPasswordMessage'); // New message element for reset password modal
 
 // Global notification message box (requires HTML element with id="notificationMessageBox")
 const notificationMessageBox = document.getElementById('notificationMessageBox');
@@ -26,12 +29,18 @@ const notificationMessageBox = document.getElementById('notificationMessageBox')
 const signupPassword = document.getElementById('signupPassword');
 const signupConfirmPassword = document.getElementById('signupConfirmPassword');
 
+const newPassword = document.getElementById('newPassword'); // New password field
+const confirmNewPassword = document.getElementById('confirmNewPassword'); // Confirm new password field
+const newPasswordStrength = document.getElementById('newPasswordStrength'); // New password strength indicator
+
 const loginAsDriverBtn = document.getElementById('loginAsDriver');
 const loginAsPassengerBtn = document.getElementById('loginAsPassenger');
 
 // New elements for invalidVerificationLinkModal
 const resendEmailInput = document.getElementById('resendEmailInput');
 const resendVerificationButton = document.getElementById('resendVerificationButton');
+
+let currentOobCode = null; // Store the oobCode globally for use in password reset form
 
 
 // NCR Cities (Hardcoded for now, could be fetched from an API/DB later)
@@ -85,14 +94,22 @@ window.addEventListener('click', (event) => {
     if (event.target == invalidVerificationLinkModal) {
         // Prevent closing by clicking outside for this specific modal
     }
+    if (event.target == resetPasswordAndVerifyModal) {
+        // Prevent closing by clicking outside for this specific modal
+    }
     if (event.target == hybridRoleModal) {
         // Prevent closing by clicking outside for this specific modal
     }
 });
 
-// Password Strength Indicator
+// Password Strength Indicator for signup
 signupPassword.addEventListener('input', () => {
     checkPasswordStrength(signupPassword.value);
+});
+
+// Password Strength Indicator for new password
+newPassword.addEventListener('input', () => {
+    checkPasswordStrength(newPassword.value, newPasswordStrength); // Pass the specific strength indicator
 });
 
 
@@ -104,7 +121,7 @@ const displayModalMessage = (element, message, type) => {
 };
 
 // Helper to display a global notification message that auto-hides
-const displayGlobalNotification = (message, type, onCloseCallback = null) => { // Added onCloseCallback
+const displayGlobalNotification = (message, type, onCloseCallback = null) => {
     if (!notificationMessageBox) {
         console.warn("Global notification message box element not found.");
         return;
@@ -144,7 +161,8 @@ const clearAllMessages = () => {
     displayModalMessage(signupMessage, '', '');
     displayModalMessage(loginMessage, '', '');
     displayModalMessage(verificationLoginMessage, '', '');
-    displayModalMessage(resendMessage, '', ''); // Clear message in resend modal
+    displayModalMessage(resendMessage, '', '');
+    displayModalMessage(resetPasswordMessage, '', ''); // Clear message in new modal
 
     if (notificationMessageBox) {
         notificationMessageBox.style.display = 'none';
@@ -216,7 +234,7 @@ signupForm.addEventListener('submit', async (e) => {
         } else if (error.code === 'auth/invalid-email') {
             errorMessage = 'Invalid email format.';
         } else if (error.code === 'auth/weak-password') {
-             errorMessage = 'Password is too weak.';
+                 errorMessage = 'Password is too weak.';
         }
         displayModalMessage(signupMessage, errorMessage, 'error');
     }
@@ -269,6 +287,77 @@ emailVerificationLoginForm.addEventListener('submit', async (e) => {
     }
 });
 
+// --- New Password Reset Form Submission (for verification via reset link) ---
+resetPasswordForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    clearAllMessages(); // Clear all previous messages
+
+    const newPass = newPassword.value;
+    const confirmNewPass = confirmNewPassword.value;
+
+    if (newPass !== confirmNewPass) {
+        displayModalMessage(resetPasswordMessage, 'Passwords do not match.', 'error');
+        return;
+    }
+
+    // Basic password strength check (re-using the logic)
+    const passwordRegex = /^(?=.*[0-9])(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?])(?=.*[A-Z]).{10,16}$/;
+    if (!passwordRegex.test(newPass)) {
+        displayModalMessage(resetPasswordMessage, 'Password must be 10-16 alphanumeric characters, contain at least 1 symbol, 1 numeric, and 1 capital letter.', 'error');
+        return;
+    }
+
+    if (!currentOobCode) {
+        displayModalMessage(resetPasswordMessage, 'No valid verification code found. Please try resending the link.', 'error');
+        return;
+    }
+
+    try {
+        // Complete the password reset, which also verifies the email
+        await auth.confirmPasswordReset(currentOobCode, newPass);
+
+        // After successful password reset and implied email verification, update Firestore status
+        // We need to retrieve the email associated with the oobCode first
+        const email = await auth.verifyPasswordResetCode(currentOobCode);
+        const userDocs = await db.collection('users').where('email', '==', email).get();
+
+        if (!userDocs.empty) {
+            const userId = userDocs.docs[0].id;
+            await db.collection('users').doc(userId).update({
+                accountStatus: 'Awaiting Admin Approval'
+            });
+             console.log("Firestore status updated to Awaiting Admin Approval after password reset verification.");
+        } else {
+             console.warn("User not found in Firestore after password reset. Status not updated.");
+        }
+
+        resetPasswordForm.reset(); // Clear form fields
+        resetPasswordAndVerifyModal.style.display = 'none'; // Close modal
+
+        displayGlobalNotification(
+            'Your account has been fully verified and is now awaiting Admin approval. Once approved, you may log in to your account and enjoy!',
+            'success',
+            () => { // Callback when this global notification is closed
+                loginModal.style.display = 'flex'; // Show main login modal
+                clearAllMessages(); // Clear messages after opening the main login modal
+            }
+        );
+
+    } catch (error) {
+        console.error("Error setting new password and verifying:", error);
+        let errorMessage = "Failed to set new password. The link might be invalid or expired. Please try resending.";
+        if (error.code === 'auth/invalid-action-code') {
+            errorMessage = 'The link is invalid or has expired.';
+        } else if (error.code === 'auth/user-disabled') {
+            errorMessage = 'Your account has been disabled.';
+        } else if (error.code === 'auth/weak-password') {
+            errorMessage = 'Password is too weak. Please ensure it meets the criteria.'; // More generic message
+        }
+        displayModalMessage(resetPasswordMessage, errorMessage, 'error');
+    }
+});
+
+
 // --- Main Login Form Submission ---
 loginForm.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -281,6 +370,7 @@ loginForm.addEventListener('submit', async (e) => {
         const userCredential = await auth.signInWithEmailAndPassword(email, password);
         const user = userCredential.user;
 
+        // Re-check emailVerified status from Firebase Auth directly, not Firestore
         if (!user.emailVerified) {
             displayModalMessage(loginMessage, 'Email not verified. Please check your email for the verification link and complete the verification login.', 'error');
             loginForm.reset(); // Clear fields
@@ -316,8 +406,14 @@ loginForm.addEventListener('submit', async (e) => {
             }, 500); // 0.5 second delay
 
         } else if (accountStatus === 'Awaiting Email Verification') {
-            displayModalMessage(loginMessage, 'Your account is awaiting email verification. Please check your email.', 'error');
-            loginForm.reset(); // Clear fields
+            // If email is verified in Auth but status is still 'Awaiting Email Verification' in Firestore,
+            // it means they clicked a link but didn't complete the verification login.
+            // Prompt them to do the verification login now.
+            displayModalMessage(loginMessage, 'Your email has been verified. Please log in here to complete account activation.', 'success');
+            emailVerificationLoginModal.style.display = 'flex'; // Show email verification login modal
+            document.getElementById('verificationEmail').value = email; // Pre-fill email
+            loginModal.style.display = 'none'; // Hide main login modal
+            loginForm.reset(); // Clear main login fields
         } else if (accountStatus === 'Awaiting Admin Approval') {
             displayModalMessage(loginMessage, 'Your account is awaiting admin approval. Please wait patiently.', 'error');
             loginForm.reset(); // Clear fields
@@ -331,6 +427,8 @@ loginForm.addEventListener('submit', async (e) => {
         let errorMessage = "Invalid email or password.";
         if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
             errorMessage = 'Invalid email or password.';
+        } else if (error.code === 'auth/invalid-credential') {
+             errorMessage = 'Invalid email or password.'; // Newer Firebase versions use this
         }
         displayModalMessage(loginMessage, errorMessage, 'error');
         loginForm.reset(); // Clear fields on error
@@ -354,84 +452,120 @@ const handleOobCode = async () => {
     const mode = urlParams.get('mode');
     const oobCode = urlParams.get('oobCode');
 
-    if (mode === 'verifyEmail' && oobCode) {
-        try {
-            // Apply the action code (verify email)
-            await auth.applyActionCode(oobCode);
-            console.log("Email verification successful via OOB code!");
+    if (oobCode) { // Check if oobCode exists regardless of mode
+        currentOobCode = oobCode; // Store globally
 
-            // After successful verification, clear the URL parameters to prevent re-triggering
-            // and replace the current history state to avoid accidental re-verification on refresh
-            history.replaceState({}, document.title, window.location.pathname);
+        if (mode === 'verifyEmail') {
+            try {
+                // Apply the action code (verify email)
+                await auth.applyActionCode(oobCode);
+                console.log("Email verification successful via OOB code!");
 
-            // Now, show the email verification login modal
-            emailVerificationLoginModal.style.display = 'flex';
-            // Try to pre-fill the email from the current user if available
-            const currentUser = auth.currentUser;
-            if (currentUser && currentUser.email) {
-                document.getElementById('verificationEmail').value = currentUser.email;
-            }
-            displayModalMessage(verificationLoginMessage, 'Email verified! Please log in to complete account activation.', 'success');
+                // After successful verification, clear the URL parameters to prevent re-triggering
+                history.replaceState({}, document.title, window.location.pathname);
 
-        } catch (error) {
-            console.error("Error applying action code for email verification:", error);
-            // New handling for invalid/expired link
-            if (error.code === 'auth/invalid-action-code') {
+                // Now, show the email verification login modal
+                emailVerificationLoginModal.style.display = 'flex';
+                // Try to pre-fill the email from the current user if available
+                const currentUser = auth.currentUser;
+                if (currentUser && currentUser.email) {
+                    document.getElementById('verificationEmail').value = currentUser.email;
+                }
+                displayModalMessage(verificationLoginMessage, 'Email verified! Please log in to complete account activation.', 'success');
+
+            } catch (error) {
+                console.error("Error applying action code for email verification:", error);
                 clearAllMessages(); // Clear existing messages
                 emailVerificationLoginModal.style.display = 'none'; // Ensure this modal is closed
-                invalidVerificationLinkModal.style.display = 'flex'; // Show the new invalid link modal
-                resendEmailInput.value = ''; // Clear resend email field
 
-                // Note: The message content is now in the HTML directly as per your request
-                // e.g., <p>The verification link is invalid or has expired. Please enter your email to resend a new verification link.</p>
+                // Specific handling for invalid_action_code
+                if (error.code === 'auth/invalid-action-code') {
+                    invalidVerificationLinkModal.style.display = 'flex'; // Show the new invalid link modal
+                    resendEmailInput.value = ''; // Clear resend email field
+                } else if (error.code === 'auth/user-disabled') {
+                    displayModalMessage(loginMessage, "Your account has been disabled. Please contact support.", 'error');
+                    loginModal.style.display = 'flex';
+                } else {
+                    displayModalMessage(loginMessage, "An unexpected error occurred during verification. Please try logging in.", 'error');
+                    loginModal.style.display = 'flex';
+                }
+            }
+        } else if (mode === 'resetPassword') { // Handle password reset links
+            try {
+                // Verify the password reset code first to ensure it's valid
+                // This implicitly confirms the email is linked and valid for reset.
+                await auth.verifyPasswordResetCode(oobCode);
+                console.log("Password reset code verified. Proceed to set new password.");
 
-                // Add event listener for the "Resend Verification Link" button
-                resendVerificationButton.onclick = async () => {
-                    clearAllMessages(); // Clear any messages in the resend modal
-                    const emailToResend = resendEmailInput.value;
-                    if (!emailToResend) {
-                        displayModalMessage(resendMessage, 'Please enter your email address.', 'error');
-                        return;
-                    }
+                clearAllMessages();
+                invalidVerificationLinkModal.style.display = 'none'; // Close any other modals
+                emailVerificationLoginModal.style.display = 'none';
 
-                    try {
-                        // Use sendPasswordResetEmail as a mechanism to resend a link that also verifies
-                        await auth.sendPasswordResetEmail(emailToResend);
-                        resendEmailInput.value = ''; // Clear field on successful send
+                resetPasswordAndVerifyModal.style.display = 'flex'; // Show the new password reset modal
+                resetPasswordForm.reset(); // Clear new password fields
+                displayModalMessage(resetPasswordMessage, '', ''); // Clear message
+                newPasswordStrength.className = 'password-strength'; // Reset strength indicator
 
-                        // Display global notification for successful resend
-                        displayGlobalNotification(
-                            'New verification link sent! Please check your email.',
-                            'success',
-                            () => { // Callback when this global notification is closed
-                                invalidVerificationLinkModal.style.display = 'none'; // Close resend modal
-                                loginModal.style.display = 'flex'; // Route to main login form
-                                clearAllMessages(); // Clear all messages
-                            }
-                        );
+                // The oobCode is now globally stored by handleOobCode, so resetPasswordForm can use it.
+                history.replaceState({}, document.title, window.location.pathname); // Clear URL parameters
 
-                    } catch (resendError) {
-                        console.error("Error resending verification link:", resendError);
-                        let resendErrorMessage = "Failed to send new verification link. Please check the email or try again.";
-                        if (resendError.code === 'auth/user-not-found') {
-                            resendErrorMessage = 'No user found with that email address.';
-                        } else if (resendError.code === 'auth/invalid-email') {
-                            resendErrorMessage = 'Please enter a valid email address.';
-                        }
-                        displayModalMessage(resendMessage, resendErrorMessage, 'error');
-                    }
-                };
+            } catch (error) {
+                console.error("Error verifying password reset code:", error);
+                clearAllMessages();
+                invalidVerificationLinkModal.style.display = 'flex'; // Show invalid link modal
+                resendEmailInput.value = ''; // Clear email field in resend modal
 
-            } else if (error.code === 'auth/user-disabled') {
-                displayModalMessage(loginMessage, "Your account has been disabled. Please contact support.", 'error');
-                loginModal.style.display = 'flex'; // Show main login if an error occurs
-            } else {
-                 displayModalMessage(loginMessage, "An unexpected error occurred during verification. Please try logging in.", 'error');
-                 loginModal.style.display = 'flex'; // Show main login if an error occurs
+                if (error.code === 'auth/invalid-action-code') {
+                    // Message already in HTML for invalidVerificationLinkModal
+                } else if (error.code === 'auth/user-disabled') {
+                    displayModalMessage(loginMessage, "Your account has been disabled. Please contact support.", 'error');
+                    loginModal.style.display = 'flex';
+                } else {
+                    displayModalMessage(loginMessage, "An unexpected error occurred. Please try logging in.", 'error');
+                    loginModal.style.display = 'flex';
+                }
             }
         }
     }
 };
+
+// Resend Verification Link button handler
+resendVerificationButton.onclick = async () => {
+    clearAllMessages(); // Clear any messages in the resend modal
+    const emailToResend = resendEmailInput.value;
+    if (!emailToResend) {
+        displayModalMessage(resendMessage, 'Please enter your email address.', 'error');
+        return;
+    }
+
+    try {
+        // Use sendPasswordResetEmail as a mechanism to resend a link that also verifies
+        await auth.sendPasswordResetEmail(emailToResend);
+        resendEmailInput.value = ''; // Clear field on successful send
+
+        // Display global notification for successful resend
+        displayGlobalNotification(
+            'New verification link sent! Please check your email.',
+            'success',
+            () => { // Callback when this global notification is closed
+                invalidVerificationLinkModal.style.display = 'none'; // Close resend modal
+                loginModal.style.display = 'flex'; // Route to main login form
+                clearAllMessages(); // Clear all messages
+            }
+        );
+
+    } catch (resendError) {
+        console.error("Error resending verification link:", resendError);
+        let resendErrorMessage = "Failed to send new verification link. Please check the email or try again.";
+        if (resendError.code === 'auth/user-not-found') {
+            resendErrorMessage = 'No user found with that email address.';
+        } else if (resendError.code === 'auth/invalid-email') {
+            resendErrorMessage = 'Please enter a valid email address.';
+        }
+        displayModalMessage(resendMessage, resendErrorMessage, 'error');
+    }
+};
+
 
 // Call handleOobCode when the page loads
 window.onload = handleOobCode;

@@ -132,6 +132,26 @@
         </div>
     </div>
 
+    <!-- New Password Reset and Verify Modal -->
+    <div id="resetPasswordAndVerifyModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
+            <h2>Set New Password & Verify</h2>
+            <p>Your verification/reset link is valid. Please set a new password to proceed with account verification and activation.</p>
+            <form id="resetPasswordForm">
+                <label for="newPassword">New Password:</label>
+                <input type="password" id="newPassword" minlength="10" maxlength="16" required>
+                <div id="newPasswordStrength" class="password-strength"></div>
+
+                <label for="confirmNewPassword">Confirm New Password:</label>
+                <input type="password" id="confirmNewPassword" minlength="10" maxlength="16" required>
+
+                <button type="submit">Set Password & Verify</button>
+            </form>
+            <div id="resetPasswordMessage" class="message-box"></div>
+        </div>
+    </div>
+
     <!-- Hybrid Role Selection Modal -->
     <div id="hybridRoleModal" class="modal">
         <div class="modal-content">
