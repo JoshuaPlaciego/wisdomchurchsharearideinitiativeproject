@@ -176,7 +176,7 @@ form button:hover {
     text-align: center;
     transition: opacity 0.3s ease-in-out;
     opacity: 0; /* Initially hidden, fade in with JS */
-    pointer-events: none; /* Allows clicks through when hidden when hidden */
+    /* REMOVED: pointer-events: none; This was preventing clicks when visible. */
 }
 
 /* Specific styles for notification types */
