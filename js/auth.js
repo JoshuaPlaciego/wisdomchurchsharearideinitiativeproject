@@ -1,25 +1,40 @@
+// js/auth.js
+
+// Import the necessary functions from the Firebase SDKs using modular syntax
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+import { getAuth, sendEmailVerification, sendPasswordResetEmail, checkActionCode } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
+import { getFirestore, collection, doc, setDoc, updateDoc, getDoc, query, where, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
+
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
-  apiKey: "AIzaSyDuRG37e5qWu1kN7aZQVBwyQwj1EbIieHE",
-  authDomain: "wcsharearideinitiativeproject.firebaseapp.com",
-  databaseURL: "https://wcsharearideinitiativeproject-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "wcsharearideinitiativeproject",
-  storageBucket: "wcsharearideinitiativeproject.firebasestorage.app",
-  messagingSenderId: "169826993800",
-  appId: "1:169826993800:web:367bee8597df79406b813d",
-  measurementId: "G-7RJV9Q4NCT"
+    apiKey: "AIzaSyDuRG37e5qWu1kN7aZQVBwyQwj1EbIieHE",
+    authDomain: "wcsharearideinitiativeproject.firebaseapp.com",
+    databaseURL: "https://wcsharearideinitiativeproject-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "wcsharearideinitiativeproject",
+    storageBucket: "wcsharearideinitiativeproject.firebasestorage.app",
+    messagingSenderId: "169826993800",
+    appId: "1:169826993800:web:367bee8597df79406b813d",
+    measurementId: "G-7RJV9Q4NCT"
 };
 
-// Initialize Firebase
-firebase.initializeApp(firebaseConfig);
+// Initialize Firebase using the modular syntax
+const app = initializeApp(firebaseConfig);
 
-const auth = firebase.auth();
-const db = firebase.firestore();
+// Get service instances using the modular syntax
+const auth = getAuth(app);
+const db = getFirestore(app);
 
 // Function to send email verification
 const sendVerificationEmail = async (user) => {
     try {
-        await user.sendEmailVerification();
+        // IMPORTANT: Configure actionCodeSettings for your GitHub Pages URL
+        // Go to Firebase Console -> Authentication -> Templates -> Email address verification
+        // Ensure the domain 'joshuaplaciego.github.io' is authorized for your project.
+        const actionCodeSettings = {
+            url: 'https://joshuaplacieigo.github.io/wisdomchurchsharearideinitiativeproject/', // Your web app's public URL
+            handleCodeInApp: true, // This is crucial for returning to your app
+        };
+        await sendEmailVerification(user, actionCodeSettings); // Use modular sendEmailVerification
         console.log("Verification email sent!");
     } catch (error) {
         console.error("Error sending verification email:", error);
@@ -27,33 +42,63 @@ const sendVerificationEmail = async (user) => {
     }
 };
 
-// Function to check password strength
-const checkPasswordStrength = (password) => {
+// Function to check password strength (corrected to accept an element argument)
+const checkPasswordStrength = (password, strengthElement) => {
+    // If a specific strengthElement is passed, use it; otherwise, default to 'passwordStrength'
+    const actualStrengthElement = strengthElement || document.getElementById('passwordStrength');
+
+    if (!actualStrengthElement) {
+        console.warn("Password strength indicator element not found.");
+        return;
+    }
+
+    actualStrengthElement.className = 'password-strength'; // Reset class
+
     let strength = 0;
-    const strengthIndicator = document.getElementById('passwordStrength');
-    strengthIndicator.className = 'password-strength'; // Reset class
+    const feedback = [];
 
     if (password.length >= 10 && password.length <= 16) {
         strength += 1;
-    }
-    if (/[A-Z]/.test(password)) { // At least one caps lock
-        strength += 1;
-    }
-    if (/[0-9]/.test(password)) { // At least one numeric
-        strength += 1;
-    }
-    if (/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]+/.test(password)) { // At least one symbol
-        strength += 1;
+    } else {
+        feedback.push("10-16 chars");
     }
 
-    if (strength < 2) {
-        strengthIndicator.classList.add('weak');
-    } else if (strength === 2 || strength === 3) {
-        strengthIndicator.classList.add('medium');
-    } else if (strength === 4) {
-        strengthIndicator.classList.add('strong');
+    if (/[A-Z]/.test(password)) { // At least one caps lock
+        strength += 1;
+    } else {
+        feedback.push("1 capital");
     }
+
+    if (/[0-9]/.test(password)) { // At least one numeric
+        strength += 1;
+    } else {
+        feedback.push("1 number");
+    }
+
+    if (/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]+/.test(password)) { // At least one symbol
+        strength += 1;
+    } else {
+        feedback.push("1 symbol");
+    }
+
+    let strengthText = "";
+    let strengthClass = "";
+
+    if (strength === 4) {
+        strengthText = "Strong";
+        strengthClass = "strong";
+    } else if (strength === 2 || strength === 3) {
+        strengthText = "Medium";
+        strengthClass = "medium";
+    } else {
+        strengthText = "Weak";
+        strengthClass = "weak";
+    }
+
+    actualStrengthElement.textContent = strengthText + (feedback.length > 0 ? ` (${feedback.join(", ")})` : "");
+    actualStrengthElement.classList.add(strengthClass);
 };
 
 // Exporting these for use in script.js
-export { auth, db, sendVerificationEmail, checkPasswordStrength };
+export { auth, db, sendVerificationEmail, checkPasswordStrength, sendPasswordResetEmail, checkActionCode, serverTimestamp };
+

@@ -5,10 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Share A Ride</title>
     <link rel="stylesheet" href="css/style.css">
-    <!-- Firebase SDKs - Add these to your head section -->
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+    <!-- IMPORTANT: Removed Firebase SDK scripts from here.
+         They will now be imported directly within auth.js using ES module syntax. -->
 </head>
 <body>
     <!-- Global Notification Message Box -->
@@ -162,7 +160,8 @@
         </div>
     </div>
 
-    <script src="js/auth.js" type="module"></script>
-    <script src="js/script.js" type="module"></script>
+    <!-- Your JavaScript files (ensure order: auth.js first as script.js depends on it) -->
+    <script type="module" src="js/auth.js"></script>
+    <script type="module" src="js/script.js"></script>
 </body>
 </html>

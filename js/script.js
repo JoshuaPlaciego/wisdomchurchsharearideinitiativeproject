@@ -1,8 +1,10 @@
-import { auth, db, sendVerificationEmail, checkPasswordStrength } from './auth.js';
+// js/script.js
+
+import { auth, db, sendVerificationEmail, checkPasswordStrength, serverTimestamp } from './auth.js'; // Added serverTimestamp to imports
 
 // Get elements
 const signupButton = document.getElementById('signupButton');
-const loginButton = document = document.getElementById('loginButton');
+const loginButton = document.getElementById('loginButton'); // Corrected typo here
 const signupModal = document.getElementById('signupModal');
 const loginModal = document.getElementById('loginModal');
 const emailVerificationLoginModal = document.getElementById('emailVerificationLoginModal');
@@ -219,7 +221,7 @@ signupForm.addEventListener('submit', async (e) => {
             role: role,
             city: city,
             accountStatus: 'Awaiting Email Verification', // Initial status
-            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            createdAt: serverTimestamp() // Corrected here: using imported serverTimestamp
         });
 
         displayGlobalNotification('Signup successful! Please check your email for a verification link.', 'success');
@@ -235,7 +237,7 @@ signupForm.addEventListener('submit', async (e) => {
         } else if (error.code === 'auth/invalid-email') {
             errorMessage = 'Invalid email format.';
         } else if (error.code === 'auth/weak-password') {
-                 errorMessage = 'Password is too weak.';
+            errorMessage = 'Password is too weak.';
         }
         displayModalMessage(signupMessage, errorMessage, 'error');
     }
@@ -332,7 +334,7 @@ resetPasswordForm.addEventListener('submit', async (e) => {
                 console.warn("User not found in Firestore for email:", oobCodeEmail, ". Status not updated.");
             }
         } else {
-             console.warn("oobCodeEmail was not set. Cannot update Firestore status.");
+            console.warn("oobCodeEmail was not set. Cannot update Firestore status.");
         }
 
 
@@ -433,7 +435,7 @@ loginForm.addEventListener('submit', async (e) => {
         if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
             errorMessage = 'Invalid email or password.';
         } else if (error.code === 'auth/invalid-credential') {
-             errorMessage = 'Invalid email or password.'; // Newer Firebase versions use this
+            errorMessage = 'Invalid email or password.'; // Newer Firebase versions use this
         }
         displayModalMessage(loginMessage, errorMessage, 'error');
         loginForm.reset(); // Clear fields on error
