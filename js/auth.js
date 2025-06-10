@@ -13,7 +13,8 @@ import {
     createUserWithEmailAndPassword, 
     signInWithEmailAndPassword,   
     signOut,                      
-    onAuthStateChanged 
+    onAuthStateChanged,
+    updatePassword // Added updatePassword
 } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js"; 
 import { getFirestore, collection, doc, setDoc, updateDoc, getDoc, query, where, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
 
@@ -185,6 +186,7 @@ export {
     signInWithEmailAndPassword,
     signOut,
     onAuthStateChanged,
+    updatePassword, // Export the new function
     getUserProfile, // Export the new function
     updateUserAccountStatus // Export the new function
 };

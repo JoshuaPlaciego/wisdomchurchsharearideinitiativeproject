@@ -14,6 +14,7 @@ import {
     signInWithEmailAndPassword,   
     signOut,                      
     onAuthStateChanged,
+    updatePassword, // NEW: Import updatePassword
     getUserProfile,         // NEW: Import for fetching user data
     updateUserAccountStatus // NEW: Import for updating user status
 } from './auth.js'; 
@@ -477,7 +478,7 @@ if (resetPasswordForm) { // Added check
         clearAllMessages(); 
 
         const newPass = newPassword?.value;
-        const confirmNewPass = confirmNewPassword?.value;
+        const confirmNewPass = confirmNewPass?.value;
 
         if (!newPass || !confirmNewPass) {
              displayModalMessage(resetPasswordMessage, 'Please enter and confirm your new password.', 'error');
@@ -500,8 +501,23 @@ if (resetPasswordForm) { // Added check
             return;
         }
 
+        // ADDED LOG: Log currentOobCode before attempting password reset
+        console.log("Attempting password change for unverified account with oobCode:", currentOobCode);
+        console.log("auth.currentUser before updatePassword/confirmPasswordReset:", auth.currentUser);
+
+
         try {
-            await confirmPasswordReset(auth, currentOobCode, newPass); 
+            // Check if a user is already signed in (which Firebase should do after a successful OOB link check)
+            if (auth.currentUser) {
+                console.log("User is already signed in. Attempting to update password directly.");
+                await updatePassword(auth.currentUser, newPass);
+                console.log("Password updated using updatePassword for current user!");
+            } else {
+                // Fallback: If for some reason auth.currentUser is null, use confirmPasswordReset with oobCode
+                console.warn("auth.currentUser is null. Falling back to confirmPasswordReset with oobCode.");
+                await confirmPasswordReset(auth, currentOobCode, newPass);
+                console.log("Password updated using confirmPasswordReset!");
+            }
 
             if (oobCodeEmail) { 
                 // Fetch user by email to get their UID for status update
@@ -538,7 +554,7 @@ if (resetPasswordForm) { // Added check
         } catch (error) {
             console.error("Error setting new password and verifying:", error);
             // Log the specific error code for debugging
-            console.error("Firebase error code for password reset:", error.code); 
+            console.error("Firebase error code for password reset attempt (updatePassword/confirmPasswordReset):", error.code); 
 
             // This message now becomes a global notification
             let errorMessage = "Failed to set new password. The link might be invalid or expired. Please try resending.";
@@ -548,6 +564,10 @@ if (resetPasswordForm) { // Added check
                 errorMessage = 'Your account has been disabled.';
             } else if (error.code === 'auth/weak-password') {
                 errorMessage = 'Password is too weak. Please ensure it meets the criteria.'; 
+            } else if (error.code === 'auth/requires-recent-login') {
+                // This error occurs if updatePassword is used without recent authentication
+                // It means the user was not signed in by the OOB code flow, or their session expired.
+                errorMessage = 'Please sign in again to change your password. You will need to request a new password reset link.';
             }
             
             // Display as global notification and on close, redirect to email verification login
@@ -556,12 +576,11 @@ if (resetPasswordForm) { // Added check
                 errorMessage, 
                 'error', 
                 () => {
-                    if (emailVerificationLoginModal) emailVerificationLoginModal.style.display = 'flex';
-                    const verificationEmailInput = document.getElementById('verificationEmail');
+                    // Always redirect to invalidVerificationLinkModal if there's a password reset error
+                    if (invalidVerificationLinkModal) invalidVerificationLinkModal.style.display = 'flex';
+                    const resendEmailInputRef = document.getElementById('resendEmailInput');
                     // Try to pre-fill email if oobCodeEmail is available
-                    if (verificationEmailInput && oobCodeEmail) verificationEmailInput.value = oobCodeEmail;
-                    const verificationPasswordInput = document.getElementById('verificationPassword');
-                    if (verificationPasswordInput) verificationPasswordInput.value = '';
+                    if (resendEmailInputRef && oobCodeEmail) resendEmailInputRef.value = oobCodeEmail;
                     currentOobCode = null; // Clear oobCode as it's invalid/expired
                     oobCodeEmail = null; // Clear email
                     clearAllMessages(); // Clear messages after redirection
@@ -765,6 +784,7 @@ const handleOobCode = async () => {
                 const info = await checkActionCode(auth, oobCode); 
                 oobCodeEmail = info.data.email; 
                 console.log("Password reset code checked and is valid. Email:", oobCodeEmail, ". Proceed to set new password.");
+                console.log("auth.currentUser AFTER checkActionCode for resetPassword:", auth.currentUser); // NEW LOG
 
                 clearAllMessages();
                 if (invalidVerificationLinkModal) invalidVerificationLinkModal.style.display = 'none'; 
