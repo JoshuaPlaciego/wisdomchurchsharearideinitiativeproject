@@ -57,6 +57,8 @@ let globalBackdrop = null;
 
 const signupPassword = document.getElementById('signupPassword');
 const signupConfirmPassword = document.getElementById('signupConfirmPassword');
+// NEW LOG: Check if confirmNewPassword element is found
+console.log('confirmNewPassword element (global scope check):', document.getElementById('confirmNewPassword'));
 
 const newPassword = document.getElementById('newPassword'); 
 const confirmNewPassword = document.getElementById('confirmNewPassword'); 
@@ -478,7 +480,7 @@ if (resetPasswordForm) { // Added check
         clearAllMessages(); 
 
         const newPass = newPassword?.value;
-        const confirmNewPass = confirmNewPass?.value;
+        const confirmNewPass = confirmNewPassword?.value;
 
         if (!newPass || !confirmNewPass) {
              displayModalMessage(resetPasswordMessage, 'Please enter and confirm your new password.', 'error');
