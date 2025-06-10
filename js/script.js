@@ -514,6 +514,16 @@ if (resetPasswordForm) { // Added check
             await confirmPasswordReset(auth, currentOobCode, newPass);
             console.log("Password updated using confirmPasswordReset!");
 
+            // ✅ NEW STEP: Sign the user in explicitly after a successful password reset
+            // This ensures their authentication state is fresh and ready for Firestore writes.
+            if (oobCodeEmail) { // Ensure we have the email from the OOB code
+                const userCredentialAfterReset = await signInWithEmailAndPassword(auth, oobCodeEmail, newPass);
+                console.log("User successfully signed in after password reset:", userCredentialAfterReset.user.uid);
+            } else {
+                console.warn("oobCodeEmail was not set, cannot explicitly sign in user after password reset.");
+            }
+
+
             if (oobCodeEmail) { 
                 // Fetch user by email to get their UID for status update
                 // Re-added collection, query, getDocs imports here for direct use, as `auth.js` might not export them
