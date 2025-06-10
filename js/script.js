@@ -547,8 +547,12 @@ if (resetPasswordForm) { // Added check
                         console.log("Account status is 'Access Granted', no change needed for UID:", signedInUser.uid);
                         notificationMessage = 'Password has been changed successfully!';
                         notificationType = 'success';
+                    } else if (userData.accountStatus === 'Awaiting Admin Approval') { // NEW CONDITION
+                        console.log("Account status is 'Awaiting Admin Approval', no change needed. Showing specific message for UID:", signedInUser.uid);
+                        notificationMessage = 'Password has been changed successfully and is now awaiting Admin approval. Once approved, you may log in to your account and enjoy!';
+                        notificationType = 'success';
                     } else {
-                        console.warn("User data found, but status not 'Awaiting Email Verification' or 'Access Granted'. Current status:", userData.accountStatus, "Status not updated after password reset.");
+                        console.warn("User data found, but status not 'Awaiting Email Verification', 'Access Granted', or 'Awaiting Admin Approval'. Current status:", userData.accountStatus, "Status not updated after password reset.");
                         notificationMessage = 'Password has been changed successfully. Your account status is ' + userData.accountStatus + '. Please contact support if needed.';
                         notificationType = 'info'; // Use info for a softer message
                     }
