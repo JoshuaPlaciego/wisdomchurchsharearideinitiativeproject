@@ -1,6 +1,7 @@
 // js/script.js
 
-import { auth, db, sendVerificationEmail, checkPasswordStrength, serverTimestamp } from './auth.js'; // Added serverTimestamp to imports
+// Updated imports to include modular functions: applyActionCode, sendPasswordResetEmail, checkActionCode
+import { auth, db, sendVerificationEmail, checkPasswordStrength, serverTimestamp, applyActionCode, sendPasswordResetEmail, checkActionCode } from './auth.js'; 
 
 // Get elements
 const signupButton = document.getElementById('signupButton');
@@ -316,8 +317,9 @@ resetPasswordForm.addEventListener('submit', async (e) => {
     }
 
     try {
-        // Complete the password reset, which also verifies the email
-        await auth.confirmPasswordReset(currentOobCode, newPass);
+        // Corrected: applyActionCode now takes auth instance as the first argument
+        await auth.confirmPasswordReset(currentOobCode, newPass); // This method is correct as a method on auth instance.
+
 
         // After successful password reset and implied email verification, update Firestore status
         // Use the globally stored oobCodeEmail
@@ -434,8 +436,6 @@ loginForm.addEventListener('submit', async (e) => {
         let errorMessage = "Invalid email or password.";
         if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
             errorMessage = 'Invalid email or password.';
-        } else if (error.code === 'auth/invalid-credential') {
-            errorMessage = 'Invalid email or password.'; // Newer Firebase versions use this
         }
         displayModalMessage(loginMessage, errorMessage, 'error');
         loginForm.reset(); // Clear fields on error
@@ -464,8 +464,8 @@ const handleOobCode = async () => {
 
         if (mode === 'verifyEmail') {
             try {
-                // Apply the action code (verify email)
-                await auth.applyActionCode(oobCode);
+                // Corrected: applyActionCode now takes auth instance as the first argument
+                await applyActionCode(auth, oobCode); 
                 console.log("Email verification successful via OOB code!");
 
                 // After successful verification, clear the URL parameters to prevent re-triggering
@@ -492,8 +492,8 @@ const handleOobCode = async () => {
             }
         } else if (mode === 'resetPassword') { // Handle password reset links
             try {
-                // Use checkActionCode to verify the validity of the oobCode without consuming it
-                const info = await auth.checkActionCode(oobCode); // This returns ActionCodeInfo
+                // Corrected: checkActionCode now takes auth instance as the first argument
+                const info = await checkActionCode(auth, oobCode); // This returns ActionCodeInfo
                 oobCodeEmail = info.data.email; // Store the email associated with the oobCode
                 console.log("Password reset code checked and is valid. Email:", oobCodeEmail, ". Proceed to set new password.");
 
@@ -534,8 +534,8 @@ resendVerificationButton.onclick = async () => {
     }
 
     try {
-        // Use sendPasswordResetEmail as a mechanism to resend a link that also verifies
-        await auth.sendPasswordResetEmail(emailToResend);
+        // Corrected: sendPasswordResetEmail now takes auth instance as the first argument
+        await sendPasswordResetEmail(auth, emailToResend);
         resendEmailInput.value = ''; // Clear field on successful send
 
         // Display global notification for successful resend
