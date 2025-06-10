@@ -21,7 +21,8 @@ import {
 } from './auth.js'; 
 
 // NEW: Explicitly import doc and setDoc from firestore for direct use in script.js
-import { doc, setDoc } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
+// Also import updateDoc as we'll use it directly
+import { doc, setDoc, updateDoc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
 
 
 // Get elements
@@ -516,32 +517,28 @@ if (resetPasswordForm) { // Added check
 
             // ✅ NEW STEP: Sign the user in explicitly after a successful password reset
             // This ensures their authentication state is fresh and ready for Firestore writes.
+            let signedInUser = null;
             if (oobCodeEmail) { // Ensure we have the email from the OOB code
                 const userCredentialAfterReset = await signInWithEmailAndPassword(auth, oobCodeEmail, newPass);
-                console.log("User successfully signed in after password reset:", userCredentialAfterReset.user.uid);
+                signedInUser = userCredentialAfterReset.user;
+                console.log("User successfully signed in after password reset. UID:", signedInUser.uid);
             } else {
                 console.warn("oobCodeEmail was not set, cannot explicitly sign in user after password reset.");
             }
 
-
-            if (oobCodeEmail) { 
-                // Fetch user by email to get their UID for status update
-                // Re-added collection, query, getDocs imports here for direct use, as `auth.js` might not export them
-                const { collection, query, where, getDocs } = await import("https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js");
-                const usersRef = collection(db, 'users'); 
-                const q = query(usersRef, where('email', '==', oobCodeEmail));
-                const userDocs = await getDocs(q);
-
-                if (!userDocs.empty) {
-                    const userId = userDocs.docs[0].id;
-                    // Update account status to 'Awaiting Admin Approval' using the new function
-                    await updateUserAccountStatus(userId, 'Awaiting Admin Approval');
-                    console.log("Firestore status updated to Awaiting Admin Approval after password reset verification for:", oobCodeEmail);
-                } else {
-                    console.warn("User not found in Firestore for email:", oobCodeEmail, ". Status not updated.");
-                }
+            // Direct Firestore update using updateDoc after successful sign-in
+            if (signedInUser && signedInUser.uid) { 
+                console.log("Attempting to update Firestore status for UID:", signedInUser.uid);
+                // Dynamically import updateDoc and doc for direct use here.
+                // These imports are already at the top of the file now.
+                await updateDoc(doc(db, 'users', signedInUser.uid), { 
+                    accountStatus: 'Awaiting Admin Approval',
+                    // Adding updatedAt timestamp which is good practice for status changes
+                    updatedAt: serverTimestamp() 
+                });
+                console.log("Firestore status updated to Awaiting Admin Approval after password reset verification for:", signedInUser.email);
             } else {
-                console.warn("oobCodeEmail was not set. Cannot update Firestore status.");
+                console.warn("Signed-in user or UID not available for Firestore status update.");
             }
 
             resetPasswordForm.reset(); 
