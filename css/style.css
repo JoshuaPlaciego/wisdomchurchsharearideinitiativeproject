@@ -50,7 +50,7 @@ main {
     top: 0;
     width: 100%; /* Full width */
     height: 100%; /* Full height */
-    overflow: auto; /* Enable scroll if needed */
+    overflow: auto; /* Enable scroll for the entire modal if its content exceeds viewport */
     background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
     justify-content: center;
     align-items: center;
@@ -59,14 +59,35 @@ main {
 .modal-content {
     background-color: #fefefe;
     margin: auto;
-    padding: 20px;
+    padding: 0; /* Remove padding here, it will be added to header/body divs */
     border: 1px solid #888;
     width: 80%; /* Could be more specific, or set max-width */
     max-width: 500px;
     border-radius: 8px;
     position: relative;
     box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    display: flex; /* Enable flexbox for header and body */
+    flex-direction: column; /* Stack header and body vertically */
+    max-height: 90vh; /* Limit modal content height to ensure it fits in viewport */
 }
+
+/* Fixed Header for Modals */
+.modal-header-fixed {
+    padding: 20px 20px 10px 20px; /* Padding for header content */
+    border-bottom: 1px solid #eee; /* Separator line */
+    background-color: #fefefe; /* Ensure background matches modal-content */
+    position: sticky; /* Makes it stick to the top */
+    top: 0; /* Sticks to the very top of its scrollable container */
+    z-index: 2; /* Ensures it's above the scrollable body content */
+}
+
+/* Scrollable Body for Modals */
+.modal-body-scrollable {
+    flex-grow: 1; /* Allows it to take available space */
+    overflow-y: auto; /* Enables vertical scrolling */
+    padding: 20px; /* Padding for scrollable content */
+}
+
 
 .close-button {
     color: #aaa;
@@ -77,6 +98,7 @@ main {
     top: 10px;
     right: 20px;
     cursor: pointer;
+    z-index: 3; /* Ensure close button is always on top */
 }
 
 .close-button:hover,
@@ -90,7 +112,7 @@ form {
     display: flex;
     flex-direction: column;
     gap: 10px;
-    margin-top: 20px;
+    margin-top: 0; /* Remove margin-top here as spacing is handled by modal-body-scrollable padding */
 }
 
 form label {
@@ -126,15 +148,15 @@ form button:hover {
 
 /* --- Modal Message Box Styles (Enhanced) --- */
 .message-box {
-    margin-top: 0; /* Removed margin-top to position at the very top */
-    padding: 12px 15px; /* Increased padding for better visibility */
+    margin-top: 0; 
+    padding: 12px 15px; 
     border-radius: 5px;
     text-align: center;
     display: none; /* Hidden by default */
-    font-size: 1.05em; /* Slightly larger font size */
-    font-weight: bold; /* Make text bolder */
-    width: 100%; /* Ensure it takes full width of its container */
-    box-sizing: border-box; /* Include padding and border in the element's total width */
+    font-size: 1.05em; 
+    font-weight: bold; 
+    width: 100%; 
+    box-sizing: border-box; 
     margin-bottom: 15px; /* Add some space below the message box */
 }
 
@@ -162,45 +184,43 @@ form button:hover {
 .password-strength.strong { background-color: green; }
 
 /* --- Global Notification Styles --- */
-/* The previous global-message-box styles are replaced to enable central positioning and backdrop */
 .global-message-box {
-    position: fixed; /* Fixes it relative to the viewport */
+    position: fixed; 
     top: 50%;
     left: 50%;
-    transform: translate(-50%, -50%); /* Centers the element precisely */
-    background-color: #333; /* Dark background for visibility */
+    transform: translate(-50%, -50%); 
+    background-color: #333; 
     color: #fff;
     padding: 20px 30px;
     border-radius: 8px;
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-    z-index: 10001; /* Higher than backdrop */
-    display: flex; /* Use flexbox for internal alignment */
-    align-items: center; /* Center vertically */
-    justify-content: space-between; /* Space out message and close button */
+    z-index: 10001; 
+    display: flex; 
+    align-items: center; 
+    justify-content: space-between; 
     font-size: 1.1em;
-    max-width: 80%; /* Limit width on larger screens */
+    max-width: 80%; 
     text-align: center;
     transition: opacity 0.3s ease-in-out;
-    opacity: 0; /* Initially hidden, fade in with JS */
-    /* REMOVED: pointer-events: none; This was preventing clicks when visible. */
+    opacity: 0; 
 }
 
 /* Specific styles for notification types */
 .global-message-box.success {
-    background-color: #4CAF50; /* Green for success */
+    background-color: #4CAF50; 
 }
 
 .global-message-box.error {
-    background-color: #f44336; /* Red for error */
+    background-color: #f44336; 
 }
 
 .global-message-box.info {
-    background-color: #2196F3; /* Blue for info */
+    background-color: #2196F3; 
 }
 
 .global-message-close-icon {
-    font-size: 1.4em; /* Larger close icon */
-    color: #fff; /* Ensure contrast for the close icon */
+    font-size: 1.4em; 
+    color: #fff; 
     cursor: pointer;
     margin-left: 20px;
     opacity: 0.8;
@@ -217,8 +237,8 @@ form button:hover {
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.6); /* Semi-transparent black */
-    z-index: 10000; /* Below the notification box but above other content */
-    display: block; /* Ensure it's block level when visible */
+    background-color: rgba(0, 0, 0, 0.6); 
+    z-index: 10000; 
+    display: block; 
     transition: opacity 0.3s ease-in-out;
 }
