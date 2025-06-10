@@ -768,44 +768,66 @@ const handleOobCode = async () => {
                 console.log("Email verification successful via OOB code!");
 
                 // If applyActionCode succeeds, the email is now verified by Firebase.
-                // Redirect user to the main login with a success message.
+                // Redirect user to the Email Verification Login Form with a success message.
                 history.replaceState({}, document.title, window.location.pathname); // Clean URL
-                displayGlobalNotification('Your email has been successfully verified! Please log in to complete account activation.', 'success', () => {
-                    if (loginModal) loginModal.style.display = 'flex';
-                    if (loginForm) loginForm.reset();
-                    const loginEmailInput = document.getElementById('loginEmail');
-                    if (loginEmailInput) loginEmailInput.value = emailFromOob; // Pre-fill login email
-                    const loginPasswordInput = document.getElementById('loginPassword');
-                    if (loginPasswordInput) loginPasswordInput.value = '';
-                    clearAllMessages();
-                });
+                displayGlobalNotification(
+                    'Your email has been successfully verified! Please log in to the Email Verification Form to complete account activation.', 
+                    'success', 
+                    () => {
+                        if (emailVerificationLoginModal) emailVerificationLoginModal.style.display = 'flex';
+                        const verificationEmailInput = document.getElementById('verificationEmail');
+                        if (verificationEmailInput) verificationEmailInput.value = emailFromOob; // Pre-fill email
+                        const verificationPasswordInput = document.getElementById('verificationPassword');
+                        if (verificationPasswordInput) verificationPasswordInput.value = ''; // Clear password field
+                        clearAllMessages();
+                    }
+                );
             } catch (error) {
                 console.error("Error handling email verification link (verifyEmail mode):", error);
                 
                 // If `applyActionCode` failed (e.g., invalid/expired link, already used),
-                // redirect to the `emailVerificationLoginModal` as per the request's flow.
-                if (emailVerificationLoginModal) emailVerificationLoginModal.style.display = 'flex';
-                const verificationEmailInput = document.getElementById('verificationEmail');
-                if (verificationEmailInput) verificationEmailInput.value = emailFromOob || ''; // Pre-fill email if obtained
-                const verificationPasswordInput = document.getElementById('verificationPassword');
-                if (verificationPasswordInput) verificationPasswordInput.value = '';
-                
+                // redirect to the `invalidVerificationLinkModal` (resend form) if expired, else to `emailVerificationLoginModal`.
                 let message = '';
-                if (error.code === 'auth/invalid-action-code') {
+                if (error.code === 'auth/expired-action-code') {
+                    // Mirror password reset expired flow
+                    message = 'The verification link has expired. Please use the "Forgot Password/Resend Email Verification Link?" option to request a new link.';
+                    if (emailVerificationLoginModal) emailVerificationLoginModal.style.display = 'none'; 
+                    displayGlobalNotification(
+                        message, 
+                        'error', 
+                        () => {
+                            if (invalidVerificationLinkModal) invalidVerificationLinkModal.style.display = 'flex';
+                            const resendEmailInputRef = document.getElementById('resendEmailInput');
+                            if(resendEmailInputRef && oobCodeEmail) resendEmailInputRef.value = oobCodeEmail; // Pre-fill email
+                            currentOobCode = null; // Clear oobCode as it's invalid/expired
+                            oobCodeEmail = null; // Clear email
+                            clearAllMessages(); // Clear messages after redirection
+                        }
+                    );
+                    history.replaceState({}, document.title, window.location.pathname); // Clean URL
+                    return; // Exit as we've handled the redirection
+                } else if (error.code === 'auth/invalid-action-code') {
                     message = 'The verification link is invalid or has already been used. Please log in below to check your account status.';
-                } else if (error.code === 'auth/expired-action-code') {
-                     message = 'The verification link has expired. Please log in below to check your account status and resend a new link.';
+                    if (emailVerificationLoginModal) emailVerificationLoginModal.style.display = 'flex';
+                    const verificationEmailInput = document.getElementById('verificationEmail');
+                    if (verificationEmailInput) verificationEmailInput.value = emailFromOob || ''; // Pre-fill email if obtained
+                    const verificationPasswordInput = document.getElementById('verificationPassword');
+                    if (verificationPasswordInput) verificationPasswordInput.value = '';
+                    displayModalMessage(verificationLoginMessage, message, 'error');
                 } else if (error.code === 'auth/user-disabled') {
-                    // If user is disabled, do not show verification login modal, go to main login with global error.
                     message = 'Your account has been disabled. Please contact support.';
                     if (emailVerificationLoginModal) emailVerificationLoginModal.style.display = 'none'; 
                     if (loginModal) loginModal.style.display = 'flex'; 
                     displayGlobalNotification(message, 'error'); 
-                    return; // Exit here as we've handled the redirection
                 } else {
                     message = 'An error occurred with the verification link. Please log in below to check your account status.';
+                    if (emailVerificationLoginModal) emailVerificationLoginModal.style.display = 'flex';
+                    const verificationEmailInput = document.getElementById('verificationEmail');
+                    if (verificationEmailInput) verificationEmailInput.value = emailFromOob || '';
+                    const verificationPasswordInput = document.getElementById('verificationPassword');
+                    if (verificationPasswordInput) verificationPasswordInput.value = '';
+                    displayModalMessage(verificationLoginMessage, message, 'error');
                 }
-                displayModalMessage(verificationLoginMessage, message, 'error');
 
                 history.replaceState({}, document.title, window.location.pathname); // Clean URL
             }
