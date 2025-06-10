@@ -10,11 +10,15 @@ import {
     applyActionCode, 
     sendPasswordResetEmail, 
     checkActionCode,
-    createUserWithEmailAndPassword, // Added this to imports
-    signInWithEmailAndPassword,   // Added this to imports
-    signOut,                      // Added this to imports
-    onAuthStateChanged            // Added this to imports
+    createUserWithEmailAndPassword, 
+    signInWithEmailAndPassword,   
+    signOut,                      
+    onAuthStateChanged            
 } from './auth.js'; 
+
+// Import Firestore functions for modular usage
+import { collection, doc, setDoc, updateDoc, getDoc, query, where, getDocs } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
+
 
 // Get elements
 const signupButton = document.getElementById('signupButton');
@@ -218,15 +222,14 @@ signupForm.addEventListener('submit', async (e) => {
     }
 
     try {
-        // Corrected: createUserWithEmailAndPassword now takes auth instance as the first argument
         const userCredential = await createUserWithEmailAndPassword(auth, email, password); 
         const user = userCredential.user;
 
         // Send email verification
         await sendVerificationEmail(user);
 
-        // Store user data in Firestore
-        await db.collection('users').doc(user.uid).set({
+        // Store user data in Firestore (Corrected: using setDoc with doc and collection)
+        await setDoc(doc(collection(db, 'users'), user.uid), {
             firstName: firstName,
             lastName: lastName,
             gender: gender,
@@ -236,7 +239,7 @@ signupForm.addEventListener('submit', async (e) => {
             role: role,
             city: city,
             accountStatus: 'Awaiting Email Verification', // Initial status
-            createdAt: serverTimestamp() // Corrected here: using imported serverTimestamp
+            createdAt: serverTimestamp() 
         });
 
         displayGlobalNotification('Signup successful! Please check your email for a verification link.', 'success');
@@ -267,13 +270,12 @@ emailVerificationLoginForm.addEventListener('submit', async (e) => {
     const password = document.getElementById('verificationPassword').value;
 
     try {
-        // Corrected: signInWithEmailAndPassword now takes auth instance as the first argument
         const userCredential = await signInWithEmailAndPassword(auth, email, password); 
         const user = userCredential.user;
 
         if (user.emailVerified) {
-            // Update account status in Firestore to "Awaiting Admin Approval"
-            await db.collection('users').doc(user.uid).update({
+            // Update account status in Firestore (Corrected: using updateDoc with doc and collection)
+            await updateDoc(doc(collection(db, 'users'), user.uid), {
                 accountStatus: 'Awaiting Admin Approval'
             });
 
@@ -332,18 +334,21 @@ resetPasswordForm.addEventListener('submit', async (e) => {
     }
 
     try {
-        // Corrected: confirmPasswordReset now takes auth instance as the first argument
         await confirmPasswordReset(auth, currentOobCode, newPass); 
-
 
         // After successful password reset and implied email verification, update Firestore status
         // Use the globally stored oobCodeEmail
         if (oobCodeEmail) { // Ensure oobCodeEmail is available from handleOobCode
-            const userDocs = await db.collection('users').where('email', '==', oobCodeEmail).get();
+            // Corrected: using query, where, and getDocs for user lookup by email
+            const usersRef = collection(db, 'users');
+            const q = query(usersRef, where('email', '==', oobCodeEmail));
+            const userDocs = await getDocs(q);
+
 
             if (!userDocs.empty) {
                 const userId = userDocs.docs[0].id;
-                await db.collection('users').doc(userId).update({
+                // Corrected: using updateDoc with doc and collection
+                await updateDoc(doc(collection(db, 'users'), userId), {
                     accountStatus: 'Awaiting Admin Approval'
                 });
                 console.log("Firestore status updated to Awaiting Admin Approval after password reset verification for:", oobCodeEmail);
@@ -391,7 +396,6 @@ loginForm.addEventListener('submit', async (e) => {
     const password = document.getElementById('loginPassword').value;
 
     try {
-        // Corrected: signInWithEmailAndPassword now takes auth instance as the first argument
         const userCredential = await signInWithEmailAndPassword(auth, email, password); 
         const user = userCredential.user;
 
@@ -402,11 +406,12 @@ loginForm.addEventListener('submit', async (e) => {
             return;
         }
 
-        // Get user data from Firestore
-        const userDoc = await db.collection('users').doc(user.uid).get();
-        if (!userDoc.exists) {
+        // Get user data from Firestore (Corrected: using getDoc with doc and collection)
+        const userDocRef = doc(collection(db, 'users'), user.uid);
+        const userDoc = await getDoc(userDocRef);
+
+        if (!userDoc.exists()) { // Corrected: use exists() method
             displayModalMessage(loginMessage, 'User data not found. Please contact support.', 'error');
-            // Corrected: signOut now takes auth instance as the first argument
             await signOut(auth); 
             loginForm.reset(); // Clear fields
             return;
@@ -481,7 +486,6 @@ const handleOobCode = async () => {
 
         if (mode === 'verifyEmail') {
             try {
-                // Corrected: applyActionCode now takes auth instance as the first argument
                 await applyActionCode(auth, oobCode); 
                 console.log("Email verification successful via OOB code!");
 
@@ -509,7 +513,6 @@ const handleOobCode = async () => {
             }
         } else if (mode === 'resetPassword') { // Handle password reset links
             try {
-                // Corrected: checkActionCode now takes auth instance as the first argument
                 const info = await checkActionCode(auth, oobCode); // This returns ActionCodeInfo
                 oobCodeEmail = info.data.email; // Store the email associated with the oobCode
                 console.log("Password reset code checked and is valid. Email:", oobCodeEmail, ". Proceed to set new password.");
@@ -551,7 +554,6 @@ resendVerificationButton.onclick = async () => {
     }
 
     try {
-        // Corrected: sendPasswordResetEmail now takes auth instance as the first argument
         await sendPasswordResetEmail(auth, emailToResend);
         resendEmailInput.value = ''; // Clear field on successful send
 
@@ -584,7 +586,7 @@ window.onload = handleOobCode;
 
 
 // Handle Firebase Auth state changes (useful for persistent login)
-onAuthStateChanged(auth, async (user) => { // Corrected: onAuthStateChanged takes auth instance as the first argument
+onAuthStateChanged(auth, async (user) => { 
     if (user) {
         // User is signed in. You might want to automatically redirect based on account status/role
         // This is a good place to fetch user data and determine their appropriate dashboard

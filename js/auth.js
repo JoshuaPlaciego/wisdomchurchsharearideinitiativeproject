@@ -9,10 +9,10 @@ import {
     checkActionCode, 
     applyActionCode, 
     confirmPasswordReset,
-    createUserWithEmailAndPassword, // Add this if your script.js calls auth.createUserWithEmailAndPassword
-    signInWithEmailAndPassword,   // Add this if your script.js calls auth.signInWithEmailAndPassword
-    signOut,                      // Add this if your script.js calls auth.signOut
-    onAuthStateChanged            // Add this if your script.js uses auth.onAuthStateChanged
+    createUserWithEmailAndPassword, // Added this if your script.js calls auth.createUserWithEmailAndPassword
+    signInWithEmailAndPassword,   // Added this if your script.js calls auth.signInWithEmailAndPassword
+    signOut,                      // Added this if your script.js calls auth.signOut
+    onAuthStateChanged            // Added this if your script.js uses auth.onAuthStateChanged
 } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js"; 
 import { getFirestore, collection, doc, setDoc, updateDoc, getDoc, query, where, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
 
