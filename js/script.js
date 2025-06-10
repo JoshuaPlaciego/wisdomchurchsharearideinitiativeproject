@@ -1,7 +1,20 @@
 // js/script.js
 
-// Updated imports to include modular functions: applyActionCode, sendPasswordResetEmail, checkActionCode
-import { auth, db, sendVerificationEmail, checkPasswordStrength, serverTimestamp, applyActionCode, sendPasswordResetEmail, checkActionCode } from './auth.js'; 
+// Updated imports to include all necessary modular functions directly
+import { 
+    auth, 
+    db, 
+    sendVerificationEmail, 
+    checkPasswordStrength, 
+    serverTimestamp, 
+    applyActionCode, 
+    sendPasswordResetEmail, 
+    checkActionCode,
+    createUserWithEmailAndPassword, // Added this to imports
+    signInWithEmailAndPassword,   // Added this to imports
+    signOut,                      // Added this to imports
+    onAuthStateChanged            // Added this to imports
+} from './auth.js'; 
 
 // Get elements
 const signupButton = document.getElementById('signupButton');
@@ -205,7 +218,8 @@ signupForm.addEventListener('submit', async (e) => {
     }
 
     try {
-        const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+        // Corrected: createUserWithEmailAndPassword now takes auth instance as the first argument
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password); 
         const user = userCredential.user;
 
         // Send email verification
@@ -253,7 +267,8 @@ emailVerificationLoginForm.addEventListener('submit', async (e) => {
     const password = document.getElementById('verificationPassword').value;
 
     try {
-        const userCredential = await auth.signInWithEmailAndPassword(email, password);
+        // Corrected: signInWithEmailAndPassword now takes auth instance as the first argument
+        const userCredential = await signInWithEmailAndPassword(auth, email, password); 
         const user = userCredential.user;
 
         if (user.emailVerified) {
@@ -317,8 +332,8 @@ resetPasswordForm.addEventListener('submit', async (e) => {
     }
 
     try {
-        // Corrected: applyActionCode now takes auth instance as the first argument
-        await auth.confirmPasswordReset(currentOobCode, newPass); // This method is correct as a method on auth instance.
+        // Corrected: confirmPasswordReset now takes auth instance as the first argument
+        await confirmPasswordReset(auth, currentOobCode, newPass); 
 
 
         // After successful password reset and implied email verification, update Firestore status
@@ -376,7 +391,8 @@ loginForm.addEventListener('submit', async (e) => {
     const password = document.getElementById('loginPassword').value;
 
     try {
-        const userCredential = await auth.signInWithEmailAndPassword(email, password);
+        // Corrected: signInWithEmailAndPassword now takes auth instance as the first argument
+        const userCredential = await signInWithEmailAndPassword(auth, email, password); 
         const user = userCredential.user;
 
         // Re-check emailVerified status from Firebase Auth directly, not Firestore
@@ -390,7 +406,8 @@ loginForm.addEventListener('submit', async (e) => {
         const userDoc = await db.collection('users').doc(user.uid).get();
         if (!userDoc.exists) {
             displayModalMessage(loginMessage, 'User data not found. Please contact support.', 'error');
-            auth.signOut(); // Log out the user if data is missing
+            // Corrected: signOut now takes auth instance as the first argument
+            await signOut(auth); 
             loginForm.reset(); // Clear fields
             return;
         }
@@ -567,7 +584,7 @@ window.onload = handleOobCode;
 
 
 // Handle Firebase Auth state changes (useful for persistent login)
-auth.onAuthStateChanged(async (user) => {
+onAuthStateChanged(auth, async (user) => { // Corrected: onAuthStateChanged takes auth instance as the first argument
     if (user) {
         // User is signed in. You might want to automatically redirect based on account status/role
         // This is a good place to fetch user data and determine their appropriate dashboard

@@ -2,7 +2,18 @@
 
 // Import the necessary functions from the Firebase SDKs using modular syntax
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
-import { getAuth, sendEmailVerification, sendPasswordResetEmail, checkActionCode } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
+import { 
+    getAuth, 
+    sendEmailVerification, 
+    sendPasswordResetEmail, 
+    checkActionCode, 
+    applyActionCode, 
+    confirmPasswordReset,
+    createUserWithEmailAndPassword, // Add this if your script.js calls auth.createUserWithEmailAndPassword
+    signInWithEmailAndPassword,   // Add this if your script.js calls auth.signInWithEmailAndPassword
+    signOut,                      // Add this if your script.js calls auth.signOut
+    onAuthStateChanged            // Add this if your script.js uses auth.onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js"; 
 import { getFirestore, collection, doc, setDoc, updateDoc, getDoc, query, where, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
 
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
@@ -31,7 +42,7 @@ const sendVerificationEmail = async (user) => {
         // Go to Firebase Console -> Authentication -> Templates -> Email address verification
         // Ensure the domain 'joshuaplaciego.github.io' is authorized for your project.
         const actionCodeSettings = {
-            url: 'https://joshuaplacieigo.github.io/wisdomchurchsharearideinitiativeproject/', // Your web app's public URL
+            url: 'https://joshuaplaciego.github.io/wisdomchurchsharearideinitiativeproject/', // Your web app's public URL
             handleCodeInApp: true, // This is crucial for returning to your app
         };
         await sendEmailVerification(user, actionCodeSettings); // Use modular sendEmailVerification
@@ -100,5 +111,22 @@ const checkPasswordStrength = (password, strengthElement) => {
 };
 
 // Exporting these for use in script.js
-export { auth, db, sendVerificationEmail, checkPasswordStrength, sendPasswordResetEmail, checkActionCode, serverTimestamp };
+export { 
+    app, // Export app instance if needed elsewhere (though usually not directly)
+    auth, 
+    db, 
+    sendVerificationEmail, 
+    checkPasswordStrength, 
+    sendPasswordResetEmail, 
+    checkActionCode, 
+    applyActionCode, 
+    confirmPasswordReset, 
+    serverTimestamp,
+    // Export functions that script.js calls directly on `auth` (like createUserWithEmailAndPassword)
+    // but are technically standalone modular functions.
+    createUserWithEmailAndPassword,
+    signInWithEmailAndPassword,
+    signOut,
+    onAuthStateChanged
+}; 
 
