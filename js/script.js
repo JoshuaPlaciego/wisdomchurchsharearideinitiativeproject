@@ -1,23 +1,25 @@
-// js/script.js
+\// js/script.js
 
-// Updated imports to include all necessary modular functions directly
+// Updated imports to include all necessary modular functions directly from auth.js
 import { 
     auth, 
-    db, 
+    db, // db instance is still useful for direct Firestore operations if needed
     sendVerificationEmail, 
     checkPasswordStrength, 
-    serverTimestamp, 
+    serverTimestamp, // serverTimestamp from auth.js
     applyActionCode, 
     sendPasswordResetEmail, 
     checkActionCode,
     createUserWithEmailAndPassword, 
     signInWithEmailAndPassword,   
     signOut,                      
-    onAuthStateChanged            
+    onAuthStateChanged,
+    getUserProfile,         // NEW: Import for fetching user data
+    updateUserAccountStatus // NEW: Import for updating user status
 } from './auth.js'; 
 
-// Import Firestore functions for modular usage
-import { collection, doc, setDoc, updateDoc, getDoc, query, where, getDocs } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
+// Removed redundant Firestore direct imports as we'll use functions from auth.js where applicable
+// import { collection, doc, setDoc, updateDoc, getDoc, query, where, getDocs } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
 
 
 // Get elements
@@ -64,8 +66,7 @@ const resendEmailInput = document.getElementById('resendEmailInput');
 const resendVerificationButton = document.getElementById('resendVerificationButton');
 
 let currentOobCode = null; 
-let oobCodeEmail = null; 
-
+let oobCodeEmail = null; // Stores email from OOB code to pre-fill forms
 
 // NCR Cities (Hardcoded for now, could be fetched from an API/DB later)
 const ncrCities = [
@@ -96,7 +97,7 @@ loginButton.addEventListener('click', () => {
     loginModal.style.display = 'flex';
 });
 
-// NEW: Event listener for Forgot Password link
+// NEW: Event listener for Forgot Password/Resend Email Verification Link
 if (forgotPasswordLink) {
     forgotPasswordLink.addEventListener('click', (e) => {
         e.preventDefault();
@@ -130,14 +131,14 @@ window.addEventListener('click', (event) => {
     }
     // Allow closing of invalidVerificationLinkModal with close button, but not outside click
     if (event.target == invalidVerificationLinkModal && event.target.querySelector('.close-button') !== event.target) {
-         // Do nothing to prevent closing by clicking outside this modal
+           // Do nothing to prevent closing by clicking outside this modal
     }
     // Allow closing of resetPasswordAndVerifyModal with close button, but not outside click
     if (event.target == resetPasswordAndVerifyModal && event.target.querySelector('.close-button') !== event.target) {
-         // Do nothing to prevent closing by clicking outside this modal
+           // Do nothing to prevent closing by clicking outside this modal
     }
     if (event.target == hybridRoleModal) {
-         // Do nothing to prevent closing by clicking outside this modal
+           // Do nothing to prevent closing by clicking outside this modal
     }
 });
 
@@ -245,7 +246,8 @@ signupForm.addEventListener('submit', async (e) => {
 
         await sendVerificationEmail(user);
 
-        await setDoc(doc(collection(db, 'users'), user.uid), {
+        // Store user data in Firestore with initial status
+        await setDoc(doc(db, 'users', user.uid), { // Use db directly, no need for collection(db, 'users') here
             firstName: firstName,
             lastName: lastName,
             gender: gender,
@@ -254,14 +256,14 @@ signupForm.addEventListener('submit', async (e) => {
             facebookLink: facebookLink,
             role: role,
             city: city,
-            accountStatus: 'Awaiting Email Verification', 
+            accountStatus: 'Awaiting Email Verification', // Initial status
             createdAt: serverTimestamp() 
         });
 
         displayGlobalNotification('Signup successful! Please check your email for a verification link.', 'success');
         signupForm.reset(); 
         signupModal.style.display = 'none'; 
-        loginModal.style.display = 'flex'; 
+        loginModal.style.display = 'flex'; // Show login modal after signup
 
     } catch (error) {
         console.error("Signup error:", error);
@@ -277,7 +279,7 @@ signupForm.addEventListener('submit', async (e) => {
     }
 });
 
-// --- Email Verification Login Form Submission (triggered after email link click) ---
+// --- Email Verification Login Form Submission (triggered after email link click, especially expired/invalid ones) ---
 emailVerificationLoginForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     clearAllMessages(); 
@@ -289,31 +291,33 @@ emailVerificationLoginForm.addEventListener('submit', async (e) => {
         const userCredential = await signInWithEmailAndPassword(auth, email, password); 
         const user = userCredential.user;
 
+        // Ensure the Firebase user's email is actually verified.
+        // This is a crucial check. If they arrived here from an expired link, Firebase's
+        // `user.emailVerified` might still be false. If it's true, it means verification
+        // already happened (perhaps through another link or manual verification).
         if (!user.emailVerified) {
-            displayModalMessage(verificationLoginMessage, 'Email not verified. Please check your email for the verification link.', 'error');
+            displayModalMessage(verificationLoginMessage, 'Email not yet verified by Firebase. Please use the "Forgot Password/Resend Email Verification Link?" option to get a new link.', 'error');
             emailVerificationLoginForm.reset(); 
+            // We don't sign out immediately here, giving them a chance to retry or realize.
             return;
         }
 
-        // NEW: Check Firestore account status BEFORE updating
-        const userDocRef = doc(collection(db, 'users'), user.uid);
-        const userDoc = await getDoc(userDocRef);
+        // Get the user's profile from Firestore to check their custom accountStatus
+        const userData = await getUserProfile(user.uid); 
 
-        if (!userDoc.exists()) {
+        if (!userData) {
             displayModalMessage(verificationLoginMessage, 'User data not found. Please contact support.', 'error');
-            await signOut(auth); 
+            await signOut(auth); // Sign out if no user data in Firestore
             emailVerificationLoginForm.reset(); 
             return;
         }
 
-        const userData = userDoc.data();
         const currentAccountStatus = userData.accountStatus;
 
         if (currentAccountStatus === 'Awaiting Email Verification') {
-            // Proceed to update to 'Awaiting Admin Approval'
-            await updateDoc(doc(collection(db, 'users'), user.uid), {
-                accountStatus: 'Awaiting Admin Approval'
-            });
+            // If the email is verified by Firebase AND Firestore status is 'Awaiting Email Verification',
+            // then we can update the status to 'Awaiting Admin Approval' and guide the user.
+            await updateUserAccountStatus(user.uid, 'Awaiting Admin Approval'); // Use the new function
 
             emailVerificationLoginForm.reset(); 
             emailVerificationLoginModal.style.display = 'none'; 
@@ -327,11 +331,10 @@ emailVerificationLoginForm.addEventListener('submit', async (e) => {
                 }
             );
         } else {
-            // Account status is not 'Awaiting Email Verification', inform user
+            // Account status is not 'Awaiting Email Verification'. Inform the user.
             displayModalMessage(verificationLoginMessage, `Your account status is currently "${currentAccountStatus}". Please proceed to the main login or contact support.`, 'error');
             emailVerificationLoginForm.reset(); 
-            // Optionally, sign them out if this was an unexpected state
-            await signOut(auth);
+            await signOut(auth); // Sign out if not in the expected state for this modal
             // After showing message, redirect to main login
             setTimeout(() => {
                 emailVerificationLoginModal.style.display = 'none';
@@ -381,15 +384,15 @@ resetPasswordForm.addEventListener('submit', async (e) => {
         await confirmPasswordReset(auth, currentOobCode, newPass); 
 
         if (oobCodeEmail) { 
-            const usersRef = collection(db, 'users');
+            // Fetch user by email to get their UID for status update
+            const usersRef = collection(db, 'users'); // Use collection directly here
             const q = query(usersRef, where('email', '==', oobCodeEmail));
             const userDocs = await getDocs(q);
 
             if (!userDocs.empty) {
                 const userId = userDocs.docs[0].id;
-                await updateDoc(doc(collection(db, 'users'), userId), {
-                    accountStatus: 'Awaiting Admin Approval'
-                });
+                // Update account status to 'Awaiting Admin Approval' using the new function
+                await updateUserAccountStatus(userId, 'Awaiting Admin Approval');
                 console.log("Firestore status updated to Awaiting Admin Approval after password reset verification for:", oobCodeEmail);
             } else {
                 console.warn("User not found in Firestore for email:", oobCodeEmail, ". Status not updated.");
@@ -397,7 +400,6 @@ resetPasswordForm.addEventListener('submit', async (e) => {
         } else {
             console.warn("oobCodeEmail was not set. Cannot update Firestore status.");
         }
-
 
         resetPasswordForm.reset(); 
         resetPasswordAndVerifyModal.style.display = 'none'; 
@@ -444,17 +446,16 @@ loginForm.addEventListener('submit', async (e) => {
             return;
         }
 
-        const userDocRef = doc(collection(db, 'users'), user.uid);
-        const userDoc = await getDoc(userDocRef);
+        // Get the user's profile from Firestore to check their account status
+        const userData = await getUserProfile(user.uid);
 
-        if (!userDoc.exists()) { 
+        if (!userData) { 
             displayModalMessage(loginMessage, 'User data not found. Please contact support.', 'error');
-            await signOut(auth); 
+            await signOut(auth); // Sign out if no user data in Firestore
             loginForm.reset(); 
             return;
         }
 
-        const userData = userDoc.data();
         const accountStatus = userData.accountStatus;
         const userRole = userData.role;
 
@@ -473,6 +474,8 @@ loginForm.addEventListener('submit', async (e) => {
             }, 500); 
 
         } else if (accountStatus === 'Awaiting Email Verification') {
+            // User's email is verified by Firebase, but Firestore status is still 'Awaiting Email Verification'.
+            // Redirect them to the specific modal to complete activation.
             displayModalMessage(loginMessage, 'Your email has been verified. Please log in here to complete account activation.', 'success');
             emailVerificationLoginModal.style.display = 'flex'; 
             document.getElementById('verificationEmail').value = email; 
@@ -491,6 +494,8 @@ loginForm.addEventListener('submit', async (e) => {
         let errorMessage = "Invalid email or password.";
         if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
             errorMessage = 'Invalid email or password.';
+        } else if (error.code === 'auth/user-disabled') {
+            errorMessage = 'Your account has been disabled.';
         }
         displayModalMessage(loginMessage, errorMessage, 'error');
         loginForm.reset(); 
@@ -516,42 +521,58 @@ const handleOobCode = async () => {
 
     if (oobCode) { 
         currentOobCode = oobCode; 
+        clearAllMessages(); // Clear messages initially
 
         if (mode === 'verifyEmail') {
+            let emailFromOob = '';
             try {
+                // Check the action code to get the email before attempting to apply it.
+                // This allows us to pre-fill the email even if the code is expired or invalid for direct application.
+                const info = await checkActionCode(auth, oobCode);
+                emailFromOob = info.data.email; 
+                oobCodeEmail = emailFromOob; // Store the email globally
+
+                // Attempt to apply the action code. This is where it will fail if expired or already used.
                 await applyActionCode(auth, oobCode); 
                 console.log("Email verification successful via OOB code!");
 
-                history.replaceState({}, document.title, window.location.pathname);
-
-                emailVerificationLoginModal.style.display = 'flex';
-                const currentUser = auth.currentUser;
-                if (currentUser && currentUser.email) {
-                    document.getElementById('verificationEmail').value = currentUser.email;
-                }
-                displayModalMessage(verificationLoginMessage, 'Email verified! Please log in to complete account activation.', 'success');
-
-            } catch (error) {
-                console.error("Error applying action code for email verification:", error);
-                // NEW: Redirect to main login and show global notification on error
-                clearAllMessages(); 
-                emailVerificationLoginModal.style.display = 'none'; 
-                resetPasswordAndVerifyModal.style.display = 'none'; // Ensure reset modal is closed too
-                invalidVerificationLinkModal.style.display = 'none'; // Ensure resend modal is closed
-
-                loginModal.style.display = 'flex'; // Show main login modal
-
-                let errorMessage = 'The verification link is invalid or has expired. Please use the "Forgot Password?" link on the login form to resend a new verification or reset link.';
-                if (error.code === 'auth/invalid-action-code') {
-                    errorMessage = 'The verification link is invalid or has already been used. Please use the "Forgot Password?" link on the login form to resend a new link.';
-                } else if (error.code === 'auth/user-disabled') {
-                     errorMessage = 'Your account has been disabled. Please contact support.';
-                }
-
-                displayGlobalNotification(errorMessage, 'error', () => {
-                    clearAllMessages(); // Clear after user closes notification
+                // If applyActionCode succeeds, the email is now verified by Firebase.
+                // Redirect user to the main login with a success message.
+                history.replaceState({}, document.title, window.location.pathname); // Clean URL
+                displayGlobalNotification('Your email has been successfully verified! Please log in to complete account activation.', 'success', () => {
+                    loginModal.style.display = 'flex';
+                    loginForm.reset();
+                    document.getElementById('loginEmail').value = emailFromOob; // Pre-fill login email
+                    document.getElementById('loginPassword').value = '';
+                    clearAllMessages();
                 });
-                resendEmailInput.value = ''; 
+            } catch (error) {
+                console.error("Error handling email verification link (verifyEmail mode):", error);
+                
+                // If `applyActionCode` failed (e.g., invalid/expired link, already used),
+                // redirect to the `emailVerificationLoginModal` as per the request's flow.
+                emailVerificationLoginModal.style.display = 'flex';
+                document.getElementById('verificationEmail').value = emailFromOob || ''; // Pre-fill email if obtained
+                document.getElementById('verificationPassword').value = '';
+                
+                let message = '';
+                if (error.code === 'auth/invalid-action-code') {
+                    message = 'The verification link is invalid or has already been used. Please log in below to check your account status.';
+                } else if (error.code === 'auth/expired-action-code') {
+                     message = 'The verification link has expired. Please log in below to check your account status and resend a new link.';
+                } else if (error.code === 'auth/user-disabled') {
+                    // If user is disabled, do not show verification login modal, go to main login with global error.
+                    message = 'Your account has been disabled. Please contact support.';
+                    emailVerificationLoginModal.style.display = 'none'; 
+                    loginModal.style.display = 'flex'; 
+                    displayGlobalNotification(message, 'error'); 
+                    return; // Exit here as we've handled the redirection
+                } else {
+                    message = 'An error occurred with the verification link. Please log in below to check your account status.';
+                }
+                displayModalMessage(verificationLoginMessage, message, 'error');
+
+                history.replaceState({}, document.title, window.location.pathname); // Clean URL
             }
         } else if (mode === 'resetPassword') { 
             try {
@@ -573,17 +594,16 @@ const handleOobCode = async () => {
 
             } catch (error) {
                 console.error("Error checking password reset code:", error);
-                // NEW: Redirect to main login and show global notification on error
                 clearAllMessages();
                 invalidVerificationLinkModal.style.display = 'none'; 
                 emailVerificationLoginModal.style.display = 'none'; 
-                resetPasswordAndVerifyModal.style.display = 'none'; // Ensure reset modal is closed
+                resetPasswordAndVerifyModal.style.display = 'none'; 
                 
                 loginModal.style.display = 'flex'; // Show main login modal
 
-                let errorMessage = 'The password reset link is invalid or has expired. Please use the "Forgot Password?" link on the login form to request a new one.';
-                 if (error.code === 'auth/invalid-action-code') {
-                    errorMessage = 'The password reset link is invalid or has already been used. Please use the "Forgot Password?" link on the login form to request a new link.';
+                let errorMessage = 'The password reset link is invalid or has expired. Please use the "Forgot Password/Resend Email Verification Link?" link on the login form to request a new one.';
+                if (error.code === 'auth/invalid-action-code') {
+                    errorMessage = 'The password reset link is invalid or has already been used. Please use the "Forgot Password/Resend Email Verification Link?" link on the login form to request a new link.';
                 } else if (error.code === 'auth/user-disabled') {
                      errorMessage = 'Your account has been disabled. Please contact support.';
                 }
@@ -607,11 +627,12 @@ resendVerificationButton.onclick = async () => {
     }
 
     try {
+        // Use sendPasswordResetEmail which can also trigger a new verification link for unverified users
         await sendPasswordResetEmail(auth, emailToResend);
         resendEmailInput.value = ''; 
 
         displayGlobalNotification(
-            'If an account with that email exists, a verification/password reset link has been sent to your email. Please check your inbox (and spam folder).', // More generic message
+            'If an account with that email exists, a verification/password reset link has been sent to your email. Please check your inbox (and spam folder).', // More generic message for security
             'success',
             () => { 
                 invalidVerificationLinkModal.style.display = 'none'; 
@@ -628,10 +649,10 @@ resendVerificationButton.onclick = async () => {
         if (resendError.code === 'auth/invalid-email') {
             resendErrorMessage = 'Please enter a valid email address.';
         } else if (resendError.code === 'auth/user-disabled') {
-             resendErrorMessage = 'This account has been disabled.';
+            resendErrorMessage = 'This account has been disabled.';
         } else {
-             // For other errors, still show a generic error but log full details
-             console.error("Unhandled resend error code:", resendError.code);
+            // For other errors, still show a generic error but log full details
+            console.error("Unhandled resend error code:", resendError.code);
         }
         displayModalMessage(resendMessage, resendErrorMessage, 'error');
     }

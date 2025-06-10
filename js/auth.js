@@ -1,7 +1,7 @@
 // js/auth.js
 
 // Import the necessary functions from the Firebase SDKs using modular syntax
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+import { initializeApp } from "[https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js](https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js)";
 import { 
     getAuth, 
     sendEmailVerification, 
@@ -9,18 +9,18 @@ import {
     checkActionCode, 
     applyActionCode, 
     confirmPasswordReset,
-    createUserWithEmailAndPassword, // Added this if your script.js calls auth.createUserWithEmailAndPassword
-    signInWithEmailAndPassword,   // Added this if your script.js calls auth.signInWithEmailAndPassword
-    signOut,                      // Added this if your script.js calls auth.signOut
-    onAuthStateChanged            // Added this if your script.js uses auth.onAuthStateChanged
-} from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js"; 
-import { getFirestore, collection, doc, setDoc, updateDoc, getDoc, query, where, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
+    createUserWithEmailAndPassword, 
+    signInWithEmailAndPassword, 
+    signOut, 
+    onAuthStateChanged 
+} from "[https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js](https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js)"; 
+import { getFirestore, collection, doc, setDoc, updateDoc, getDoc, query, where, getDocs, serverTimestamp } from "[https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js](https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js)";
 
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
     apiKey: "AIzaSyDuRG37e5qWu1kN7aZQVBwyQwj1EbIieHE",
     authDomain: "wcsharearideinitiativeproject.firebaseapp.com",
-    databaseURL: "https://wcsharearideinitiativeproject-default-rtdb.asia-southeast1.firebasedatabase.app",
+    databaseURL: "[https://wcsharearideinitiativeproject-default-rtdb.asia-southeast1.firebasedatabase.app](https://wcsharearideinitiativeproject-default-rtdb.asia-southeast1.firebasedatabase.app)",
     projectId: "wcsharearideinitiativeproject",
     storageBucket: "wcsharearideinitiativeproject.firebasestorage.app",
     messagingSenderId: "169826993800",
@@ -35,14 +35,18 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-// Function to send email verification
+/**
+ * Sends an email verification link to the provided user.
+ * @param {object} user - The Firebase User object.
+ * @throws {Error} If there's an error sending the email.
+ */
 const sendVerificationEmail = async (user) => {
     try {
         // IMPORTANT: Configure actionCodeSettings for your GitHub Pages URL
         // Go to Firebase Console -> Authentication -> Templates -> Email address verification
         // Ensure the domain 'joshuaplaciego.github.io' is authorized for your project.
         const actionCodeSettings = {
-            url: 'https://joshuaplaciego.github.io/wisdomchurchsharearideinitiativeproject/', // Your web app's public URL
+            url: '[https://joshuaplaciego.github.io/wisdomchurchsharearideinitiativeproject/](https://joshuaplaciego.github.io/wisdomchurchsharearideinitiativeproject/)', // Your web app's public URL
             handleCodeInApp: true, // This is crucial for returning to your app
         };
         await sendEmailVerification(user, actionCodeSettings); // Use modular sendEmailVerification
@@ -53,7 +57,11 @@ const sendVerificationEmail = async (user) => {
     }
 };
 
-// Function to check password strength (corrected to accept an element argument)
+/**
+ * Checks the strength of a given password and provides feedback.
+ * @param {string} password - The password string to check.
+ * @param {HTMLElement} strengthElement - The HTML element to display the strength feedback.
+ */
 const checkPasswordStrength = (password, strengthElement) => {
     // If a specific strengthElement is passed, use it; otherwise, default to 'passwordStrength'
     const actualStrengthElement = strengthElement || document.getElementById('passwordStrength');
@@ -68,25 +76,29 @@ const checkPasswordStrength = (password, strengthElement) => {
     let strength = 0;
     const feedback = [];
 
+    // Check length (10-16 characters)
     if (password.length >= 10 && password.length <= 16) {
         strength += 1;
     } else {
         feedback.push("10-16 chars");
     }
 
-    if (/[A-Z]/.test(password)) { // At least one caps lock
+    // Check for at least one uppercase letter
+    if (/[A-Z]/.test(password)) { 
         strength += 1;
     } else {
         feedback.push("1 capital");
     }
 
-    if (/[0-9]/.test(password)) { // At least one numeric
+    // Check for at least one number
+    if (/[0-9]/.test(password)) { 
         strength += 1;
     } else {
         feedback.push("1 number");
     }
 
-    if (/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]+/.test(password)) { // At least one symbol
+    // Check for at least one symbol
+    if (/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]+/.test(password)) { 
         strength += 1;
     } else {
         feedback.push("1 symbol");
@@ -110,9 +122,55 @@ const checkPasswordStrength = (password, strengthElement) => {
     actualStrengthElement.classList.add(strengthClass);
 };
 
-// Exporting these for use in script.js
+/**
+ * Fetches a user's profile data from the 'users' Firestore collection.
+ * @param {string} uid - The unique ID of the user.
+ * @returns {Promise<object|null>} A promise that resolves to the user's profile data or null if not found.
+ * @throws {Error} If there's an error fetching the document.
+ */
+const getUserProfile = async (uid) => {
+    try {
+        const userDocRef = doc(db, "users", uid);
+        const userDocSnap = await getDoc(userDocRef);
+        if (userDocSnap.exists()) {
+            console.log("User profile data:", userDocSnap.data());
+            return userDocSnap.data();
+        } else {
+            console.log(`No user profile document found for UID: ${uid}`);
+            return null;
+        }
+    } catch (error) {
+        console.error("Error getting user profile:", error);
+        throw error;
+    }
+};
+
+/**
+ * Updates the 'accountStatus' field for a user in the 'users' Firestore collection.
+ * Includes a server timestamp for the update time.
+ * @param {string} uid - The unique ID of the user.
+ * @param {string} status - The new account status (e.g., "Active", "Awaiting Email Verification", "Disabled").
+ * @returns {Promise<void>} A promise that resolves when the update is complete.
+ * @throws {Error} If there's an error updating the document.
+ */
+const updateUserAccountStatus = async (uid, status) => {
+    try {
+        const userDocRef = doc(db, "users", uid);
+        await updateDoc(userDocRef, {
+            accountStatus: status,
+            updatedAt: serverTimestamp() // Use serverTimestamp for consistent timestamps
+        });
+        console.log(`User ${uid} account status updated to: ${status}`);
+    } catch (error) {
+        console.error("Error updating user account status:", error);
+        throw error;
+    }
+};
+
+
+// Exporting these for use in script.js and other modules
 export { 
-    app, // Export app instance if needed elsewhere (though usually not directly)
+    app, 
     auth, 
     db, 
     sendVerificationEmail, 
@@ -121,12 +179,11 @@ export {
     checkActionCode, 
     applyActionCode, 
     confirmPasswordReset, 
-    serverTimestamp,
-    // Export functions that script.js calls directly on `auth` (like createUserWithEmailAndPassword)
-    // but are technically standalone modular functions.
+    serverTimestamp, // Make sure serverTimestamp is exported
     createUserWithEmailAndPassword,
     signInWithEmailAndPassword,
     signOut,
-    onAuthStateChanged
-}; 
-
+    onAuthStateChanged,
+    getUserProfile, // Export the new function
+    updateUserAccountStatus // Export the new function
+};

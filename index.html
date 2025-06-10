@@ -94,8 +94,8 @@
                 <input type="password" id="loginPassword" required>
 
                 <button type="submit">Log In</button>
-                <!-- NEW: Forgot Password link -->
-                <p class="text-center mt-3"><a href="#" id="forgotPasswordLink">Forgot Password?</a></p> 
+                <!-- UPDATED: Forgot Password/Resend Email Verification Link -->
+                <p class="text-center mt-3"><a href="#" id="forgotPasswordLink">Forgot Password/Resend Email Verification Link?</a></p> 
             </form>
             <div id="loginMessage" class="message-box"></div>
         </div>
@@ -104,7 +104,7 @@
     <!-- Email Verification Login Modal -->
     <div id="emailVerificationLoginModal" class="modal">
         <div class="modal-content">
-            <span class="close-button">&times;</span> <!-- Added close button for consistency -->
+            <span class="close-button">&times;</span> 
             <h2>Email Verified!</h2>
             <p>To be completely verified and progress to account activation, logging in with your credential is required!</p>
             <form id="emailVerificationLoginForm">
@@ -120,12 +120,12 @@
         </div>
     </div>
 
-    <!-- Invalid Link / Resend Modal -->
+    <!-- Invalid Link / Resend Modal (Used for "Forgot Password/Resend Email Verification Link") -->
     <div id="invalidVerificationLinkModal" class="modal">
         <div class="modal-content">
             <span class="close-button">&times;</span>
             <h2>Resend Verification / Reset Password</h2>
-            <p>Please enter your email to resend a verification link or a password reset link.</p>
+            <p>Please enter your email to receive a new verification link or a password reset link.</p>
             <label for="resendEmailInput">Email:</label>
             <input type="email" id="resendEmailInput" required>
             <button id="resendVerificationButton">Send Link</button>
