@@ -7,7 +7,7 @@ const notificationMessageBox = document.getElementById('notificationMessageBox')
 let globalBackdrop = null;
 
 // Helper to display a global notification message (copied from script.js)
-const displayGlobalNotification = (message, type, onCloseCallback = null) => {
+export const displayGlobalNotification = (message, type, onCloseCallback = null) => {
     if (!notificationMessageBox) {
         console.warn("Global notification message box element not found. Cannot display notification.");
         return;
@@ -54,7 +54,7 @@ const displayGlobalNotification = (message, type, onCloseCallback = null) => {
 };
 
 // Helper function to remove the global backdrop (copied from script.js)
-const removeGlobalBackdrop = () => {
+export const removeGlobalBackdrop = () => {
     if (globalBackdrop && globalBackdrop.parentNode) {
         globalBackdrop.parentNode.removeChild(globalBackdrop);
         globalBackdrop = null; 
@@ -62,7 +62,7 @@ const removeGlobalBackdrop = () => {
 };
 
 // Clears all messages (including global)
-const clearAllMessages = () => {
+export const clearAllMessages = () => {
     if (notificationMessageBox) {
         notificationMessageBox.style.display = 'none';
         notificationMessageBox.style.opacity = '0';
@@ -80,7 +80,7 @@ const logoutButton = document.getElementById('logoutButton');
  * It reads the user's primary role and admin status from sessionStorage
  * (which is set during login in script.js).
  */
-const populateRoleSelector = () => {
+export const populateRoleSelector = () => { // Exported
     const currentUserRole = sessionStorage.getItem('currentUserRole'); // Primary role from Firestore
     const isAdmin = sessionStorage.getItem('isAdmin') === 'true'; // Admin status from claims
 
@@ -173,10 +173,9 @@ if (logoutButton) {
 }
 
 // On page load, check auth state and populate role selector
+// This part remains in dashboard_roles.js to ensure dashboards are protected and roles are populated.
 onAuthStateChanged(auth, async (user) => {
     if (user) {
-        // User is logged in. Fetch their claims and profile to ensure session storage is up-to-date.
-        // This handles cases where user refreshes the page or navigates directly.
         try {
             const [userData, idTokenResult] = await Promise.all([
                 getUserProfile(user.uid),
@@ -187,13 +186,11 @@ onAuthStateChanged(auth, async (user) => {
                 const userRole = userData.role;
                 const isAdmin = idTokenResult.claims.admin === true;
 
-                // Update session storage in case it was cleared or page refreshed
                 sessionStorage.setItem('currentUserRole', userRole);
                 sessionStorage.setItem('isAdmin', isAdmin ? 'true' : 'false');
                 
                 populateRoleSelector();
             } else {
-                // Account not 'Access Granted' or data missing, redirect to login
                 displayGlobalNotification("Your account is not active. Please log in again.", "error", () => {
                     signOut(auth);
                     window.location.href = 'index.html';
@@ -207,7 +204,6 @@ onAuthStateChanged(auth, async (user) => {
             });
         }
     } else {
-        // No user is logged in, redirect to index.html
         window.location.href = 'index.html';
     }
 });
