@@ -881,11 +881,19 @@ if (resendVerificationButton) { // Added check
                 resendErrorMessage = 'This account has been disabled.';
             } else if (resendError.code === 'auth/network-request-failed') { // Added specific network error handling
                 resendErrorMessage = 'Network error. Please check your internet connection and try again.';
+            } else if (resendError.code === 'auth/too-many-requests') { // Added specific handling for too-many-requests
+                resendErrorMessage = 'Too many requests for this email. Please wait a few minutes before trying again.';
             } else {
                 // For other errors, still show a generic error but log full details
                 console.error("Unhandled resend error code:", resendError.code);
             }
-            displayModalMessage(resendMessage, resendErrorMessage, 'error');
+            
+            // Changed from displayModalMessage to displayGlobalNotification
+            displayGlobalNotification(resendErrorMessage, 'error', () => {
+                // Keep the invalidVerificationLinkModal open so the user can retry
+                // Just clear the global notification
+                clearAllMessages(); 
+            });
         }
     };
 } else {
