@@ -18,5 +18,9 @@
         "destination": "/index.html"
       }
     ]
+  },
+  "functions": {
+    "source": "functions",
+    "runtime": "nodejs18" // Set to nodejs18 (recommended latest LTS for Firebase Functions)
   }
 }

@@ -16,6 +16,13 @@
     <header class="admin-header">
         <h1>Admin Dashboard</h1>
         <nav>
+            <!-- New Role Selection Dropdown -->
+            <div class="role-selector-container">
+                <select id="roleSelector" class="role-selector">
+                    <option value="">Switch Role</option>
+                    <!-- Options will be populated by JavaScript -->
+                </select>
+            </div>
             <button id="adminLogoutButton">Log Out</button>
         </nav>
     </header>
@@ -23,6 +30,7 @@
     <main class="admin-main">
         <h2>User Account Management</h2>
         <p>Review and approve user accounts. Only users with 'Awaiting Email Verification' or 'Awaiting Admin Approval' are shown by default.</p>
+        <p class="admin-note">Note: Admin roles are assigned manually by the developer using the Firebase CLI or Admin SDK for security and cost control.</p>
 
         <div class="filter-controls">
             <label for="statusFilter">Show Status:</label>
@@ -46,6 +54,7 @@
                         <th>Status</th>
                         <th>Registered On</th>
                         <th>Actions</th>
+                        <!-- REMOVED: Admin Status/Actions Column Header -->
                     </tr>
                 </thead>
                 <tbody>
@@ -56,8 +65,10 @@
         </div>
     </main>
 
-    <!-- Import Firebase and Auth module (needed for admin_script.js) -->
+    <!-- Import Firebase and Auth module -->
     <script type="module" src="js/auth.js"></script>
+    <!-- Import the shared dashboard roles script (to handle role selector and logout) -->
+    <script type="module" src="js/dashboard_roles.js"></script>
     <!-- Import the new admin specific script -->
     <script type="module" src="js/admin_script.js"></script>
 </body>
