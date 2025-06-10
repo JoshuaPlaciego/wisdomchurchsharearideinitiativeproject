@@ -537,6 +537,9 @@ if (resetPasswordForm) { // Added check
 
         } catch (error) {
             console.error("Error setting new password and verifying:", error);
+            // Log the specific error code for debugging
+            console.error("Firebase error code for password reset:", error.code); 
+
             // This message now becomes a global notification
             let errorMessage = "Failed to set new password. The link might be invalid or expired. Please try resending.";
             if (error.code === 'auth/invalid-action-code') {
@@ -589,11 +592,26 @@ if (loginForm) { // Added check
             const userCredential = await signInWithEmailAndPassword(auth, email, password); 
             const user = userCredential.user;
 
+            // CHANGE START: Modified this section to use global notification and redirect to Email Verification Login Form
             if (!user.emailVerified) {
-                displayModalMessage(loginMessage, 'Email not verified. Please check your email for the verification link and complete the verification login.', 'error');
-                loginForm.reset(); 
-                return;
+                loginForm.reset(); // Clear login form
+                if (loginModal) loginModal.style.display = 'none'; // Hide main login modal
+
+                displayGlobalNotification(
+                    'Your email is not yet verified. Please complete the verification process by logging in to the Email Verification Form.',
+                    'error',
+                    () => {
+                        if (emailVerificationLoginModal) emailVerificationLoginModal.style.display = 'flex';
+                        const verificationEmailInput = document.getElementById('verificationEmail');
+                        if (verificationEmailInput) verificationEmailInput.value = email; // Pre-fill email in verification form
+                        const verificationPasswordInput = document.getElementById('verificationPassword');
+                        if (verificationPasswordInput) verificationPasswordInput.value = ''; // Clear password field
+                        clearAllMessages();
+                    }
+                );
+                return; // Stop further execution in this block
             }
+            // CHANGE END
 
             // Get the user's profile from Firestore to check their account status
             const userData = await getUserProfile(user.uid);
@@ -623,8 +641,8 @@ if (loginForm) { // Added check
                 }, 500); 
 
             } else if (accountStatus === 'Awaiting Email Verification') {
-                // User's email is verified by Firebase, but Firestore status is still 'Awaiting Email Verification'.
-                // Redirect them to the specific modal to complete activation.
+                // This block is for when a user with an already verified email (by Firebase) but 'Awaiting Email Verification'
+                // Firestore status logs in from the main login. They are explicitly guided to the verification login.
                 displayModalMessage(loginMessage, 'Your email has been verified. Please log in here to complete account activation.', 'success');
                 if (emailVerificationLoginModal) emailVerificationLoginModal.style.display = 'flex'; 
                 const verificationEmailInput = document.getElementById('verificationEmail');
@@ -761,24 +779,32 @@ const handleOobCode = async () => {
                 history.replaceState({}, document.title, window.location.pathname); 
 
             } catch (error) {
-                console.error("Error checking password reset code:", error);
+                console.error("Error checking password reset code (mode=resetPassword):", error); // More specific log
                 clearAllMessages();
                 if (invalidVerificationLinkModal) invalidVerificationLinkModal.style.display = 'none'; 
                 if (emailVerificationLoginModal) emailVerificationLoginModal.style.display = 'none'; 
                 if (resetPasswordAndVerifyModal) resetPasswordAndVerifyModal.style.display = 'none'; 
                 
-                if (loginModal) loginModal.style.display = 'flex'; // Show main login modal
+                // Always go to resend/forgot password modal if resetPassword code itself is invalid/expired
+                if (loginModal) loginModal.style.display = 'none'; // Ensure main login is hidden if it was open
 
                 let errorMessage = 'The password reset link is invalid or has expired. Please use the "Forgot Password/Resend Email Verification Link?" link on the login form to request a new one.';
                 if (error.code === 'auth/invalid-action-code') {
                     errorMessage = 'The password reset link is invalid or has already been used. Please use the "Forgot Password/Resend Email Verification Link?" link on the login form to request a new link.';
                 } else if (error.code === 'auth/user-disabled') {
                      errorMessage = 'Your account has been disabled. Please contact support.';
+                } else if (error.code === 'auth/action-code-expired') { // Explicitly handle expired code
+                     errorMessage = 'The password reset link has expired. Please use the "Forgot Password/Resend Email Verification Link?" link on the login form to request a new one.';
                 }
 
+
                 displayGlobalNotification(errorMessage, 'error', () => {
+                    if (invalidVerificationLinkModal) invalidVerificationLinkModal.style.display = 'flex'; // Redirect to resend form
+                    const resendEmailInputRef = document.getElementById('resendEmailInput');
+                    if(resendEmailInputRef && oobCodeEmail) resendEmailInputRef.value = oobCodeEmail; // Pre-fill email
                     clearAllMessages(); // Clear after user closes notification
                 });
+                // Ensure form for resend is displayed correctly
                 if (resendEmailInput) resendEmailInput.value = ''; 
             }
         }
