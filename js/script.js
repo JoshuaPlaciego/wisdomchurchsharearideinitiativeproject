@@ -405,11 +405,21 @@ if (emailVerificationLoginForm) { // Added check
                     }
                 );
             } else {
-                // Account status is not 'Awaiting Email Verification'. Inform the user and keep them on this modal.
-                displayModalMessage(verificationLoginMessage, `Your account status is currently "${currentAccountStatus}". Please proceed to the main login or contact contact support if you need further assistance.`, 'error');
-                emailVerificationLoginForm.reset(); 
-                // DO NOT automatically redirect to main login; keep user on this modal.
-                // await signOut(auth); // Optionally sign out if not in expected state
+                // Account status is not 'Awaiting Email Verification'. Inform the user with a global notification.
+                // Upon closing the notification, they will be redirected to the main login form.
+                emailVerificationLoginForm.reset(); // Clear form for next attempt
+                if (emailVerificationLoginModal) emailVerificationLoginModal.style.display = 'none'; // Hide this modal
+
+                displayGlobalNotification(
+                    `Your account status is currently "${currentAccountStatus}". Please proceed to the main login or contact support if you need further assistance.`, 
+                    'error', // Using 'error' type for a more prominent message
+                    () => {
+                        if (loginModal) loginModal.style.display = 'flex'; // Redirect to main login
+                        clearAllMessages(); // Clear messages after redirection
+                    }
+                );
+                // Optionally sign out the user if this status is not expected here
+                await signOut(auth); 
             }
 
         } catch (error) {
