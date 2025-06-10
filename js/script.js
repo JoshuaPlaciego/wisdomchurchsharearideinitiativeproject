@@ -50,6 +50,9 @@ const resetPasswordMessage = document.getElementById('resetPasswordMessage');
 
 // Global notification message box (requires HTML element with id="notificationMessageBox")
 const notificationMessageBox = document.getElementById('notificationMessageBox');
+// Global variable for the modal backdrop element
+let globalBackdrop = null;
+
 
 const signupPassword = document.getElementById('signupPassword');
 const signupConfirmPassword = document.getElementById('signupConfirmPassword');
@@ -218,17 +221,33 @@ const displayModalMessage = (element, message, type) => {
     element.style.display = message ? 'block' : 'none'; // Only show if message is not empty
 };
 
-// Helper to display a global notification message that auto-hides
+/**
+ * Helper to display a global notification message that auto-hides or stays until closed.
+ * Adds a greyed-out backdrop and centers the message.
+ * @param {string} message - The message content.
+ * @param {string} type - The type of message (e.g., 'success', 'error', 'info').
+ * @param {function} [onCloseCallback=null] - Optional callback to execute when the notification is closed.
+ */
 const displayGlobalNotification = (message, type, onCloseCallback = null) => {
     if (!notificationMessageBox) {
         console.warn("Global notification message box element not found. Cannot display notification.");
         return;
     }
+
+    // Clear any previous messages and remove any existing backdrop
+    clearAllMessages(); 
+    removeGlobalBackdrop(); // Ensure any old backdrop is gone
+
+    // Create and append the backdrop
+    globalBackdrop = document.createElement('div');
+    globalBackdrop.className = 'global-modal-backdrop';
+    document.body.appendChild(globalBackdrop);
+
     // Clear any previous content and close button
     notificationMessageBox.innerHTML = '';
     notificationMessageBox.textContent = message;
     notificationMessageBox.className = `global-message-box ${type}`;
-    notificationMessageBox.style.display = 'flex'; // Use flex to align message and close button
+    notificationMessageBox.style.display = 'flex'; // Use flex for centering via CSS
     notificationMessageBox.style.opacity = '1';
 
     // Create a close icon
@@ -242,9 +261,11 @@ const displayGlobalNotification = (message, type, onCloseCallback = null) => {
 
     closeIcon.onclick = () => {
         notificationMessageBox.style.opacity = '0';
+        // Add a slight delay for the fade-out effect before removing
         setTimeout(() => {
             notificationMessageBox.style.display = 'none';
             notificationMessageBox.innerHTML = ''; // Clear content
+            removeGlobalBackdrop(); // Remove the backdrop when the notification closes
             if (onCloseCallback) { // Execute callback when notification is closed
                 onCloseCallback();
             }
@@ -254,7 +275,16 @@ const displayGlobalNotification = (message, type, onCloseCallback = null) => {
     notificationMessageBox.appendChild(closeIcon);
 };
 
-// Clears all message boxes
+// Helper function to remove the global backdrop
+const removeGlobalBackdrop = () => {
+    if (globalBackdrop && globalBackdrop.parentNode) {
+        globalBackdrop.parentNode.removeChild(globalBackdrop);
+        globalBackdrop = null; // Reset the reference
+    }
+};
+
+
+// Clears all message boxes and the global backdrop
 const clearAllMessages = () => {
     displayModalMessage(signupMessage, '', '');
     displayModalMessage(loginMessage, '', '');
@@ -267,6 +297,7 @@ const clearAllMessages = () => {
         notificationMessageBox.style.opacity = '0';
         notificationMessageBox.innerHTML = ''; 
     }
+    removeGlobalBackdrop(); // Also remove backdrop when clearing all messages
 };
 
 
