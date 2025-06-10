@@ -537,6 +537,7 @@ if (resetPasswordForm) { // Added check
 
         } catch (error) {
             console.error("Error setting new password and verifying:", error);
+            // This message now becomes a global notification
             let errorMessage = "Failed to set new password. The link might be invalid or expired. Please try resending.";
             if (error.code === 'auth/invalid-action-code') {
                 errorMessage = 'The link is invalid or has already been used. Please try resending a new link.';
@@ -545,7 +546,24 @@ if (resetPasswordForm) { // Added check
             } else if (error.code === 'auth/weak-password') {
                 errorMessage = 'Password is too weak. Please ensure it meets the criteria.'; 
             }
-            displayModalMessage(resetPasswordMessage, errorMessage, 'error');
+            
+            // Display as global notification and on close, redirect to email verification login
+            if (resetPasswordAndVerifyModal) resetPasswordAndVerifyModal.style.display = 'none'; // Hide the current modal
+            displayGlobalNotification(
+                errorMessage, 
+                'error', 
+                () => {
+                    if (emailVerificationLoginModal) emailVerificationLoginModal.style.display = 'flex';
+                    const verificationEmailInput = document.getElementById('verificationEmail');
+                    // Try to pre-fill email if oobCodeEmail is available
+                    if (verificationEmailInput && oobCodeEmail) verificationEmailInput.value = oobCodeEmail;
+                    const verificationPasswordInput = document.getElementById('verificationPassword');
+                    if (verificationPasswordInput) verificationPasswordInput.value = '';
+                    currentOobCode = null; // Clear oobCode as it's invalid/expired
+                    oobCodeEmail = null; // Clear email
+                    clearAllMessages(); // Clear messages after redirection
+                }
+            );
         }
     });
 } else {
