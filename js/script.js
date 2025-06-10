@@ -517,8 +517,14 @@ if (resetPasswordForm) { // Added check
             } else {
                 // Fallback: If for some reason auth.currentUser is null, use confirmPasswordReset with oobCode
                 console.warn("auth.currentUser is null. Falling back to confirmPasswordReset with oobCode.");
-                await confirmPasswordReset(auth, currentOobCode, newPass);
-                console.log("Password updated using confirmPasswordReset!");
+                // Removed `confirmPasswordReset(auth, currentOobCode, newPass);` here
+                // This line caused the "Failed to set new password..." error.
+                // It is likely that `checkActionCode` in `handleOobCode` already consumed the `oobCode` or implicitly signed in the user.
+                // If `auth.currentUser` is null here, it means the OOB flow itself failed or the session expired.
+                // In such cases, `confirmPasswordReset` with an already potentially consumed or expired `oobCode`
+                // would consistently fail with `auth/invalid-action-code` or similar.
+                // We'll now directly throw an error to trigger the global notification logic if auth.currentUser is null.
+                throw new Error("User session not established after action code verification. Please re-request the link.");
             }
 
             if (oobCodeEmail) { 
@@ -570,9 +576,12 @@ if (resetPasswordForm) { // Added check
                 // This error occurs if updatePassword is used without recent authentication
                 // It means the user was not signed in by the OOB code flow, or their session expired.
                 errorMessage = 'Please sign in again to change your password. You will need to request a new password reset link.';
+            } else if (error.message === "User session not established after action code verification. Please re-request the link.") {
+                // Specific message for our new custom error
+                errorMessage = "Security session expired. Please request a new password reset link.";
             }
             
-            // Display as global notification and on close, redirect to email verification login
+            // Display as global notification and on close, redirect to invalidVerificationLinkModal
             if (resetPasswordAndVerifyModal) resetPasswordAndVerifyModal.style.display = 'none'; // Hide the current modal
             displayGlobalNotification(
                 errorMessage, 
@@ -860,6 +869,9 @@ if (resendVerificationButton) { // Added check
 
         } catch (resendError) {
             console.error("Error sending verification/reset link:", resendError);
+            // NEW LOG: Log the specific error code here
+            console.error("Firebase error code for resend link attempt:", resendError.code);
+
             let resendErrorMessage = "Failed to send link. Please check the email format or try again.";
             // Firebase sendPasswordResetEmail is intentionally vague on user-not-found to prevent email enumeration.
             // So, we'll keep the success message generic even on some errors, or provide a specific error only if it's not 'user-not-found'.
@@ -867,6 +879,8 @@ if (resendVerificationButton) { // Added check
                 resendErrorMessage = 'Please enter a valid email address.';
             } else if (resendError.code === 'auth/user-disabled') {
                 resendErrorMessage = 'This account has been disabled.';
+            } else if (resendError.code === 'auth/network-request-failed') { // Added specific network error handling
+                resendErrorMessage = 'Network error. Please check your internet connection and try again.';
             } else {
                 // For other errors, still show a generic error but log full details
                 console.error("Unhandled resend error code:", resendError.code);
