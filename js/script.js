@@ -201,7 +201,7 @@ if (signupPassword) { // Added check
         checkPasswordStrength(signupPassword.value);
     });
 } else {
-    console.warn("Signup password element not found.");
+    console.warn("signupPassword element not found.");
 }
 
 
@@ -510,6 +510,9 @@ if (resetPasswordForm) { // Added check
         console.log("Attempting password change with oobCode:", currentOobCode);
         console.log("auth.currentUser before confirmPasswordReset:", auth.currentUser);
 
+        let notificationMessage = ''; // Variable to hold the custom notification message
+        let notificationType = 'success'; // Default type for success messages
+
         try {
             // Use confirmPasswordReset specifically for password reset links with oobCode
             await confirmPasswordReset(auth, currentOobCode, newPass);
@@ -526,27 +529,47 @@ if (resetPasswordForm) { // Added check
                 console.warn("oobCodeEmail was not set, cannot explicitly sign in user after password reset.");
             }
 
-            // Direct Firestore update using updateDoc after successful sign-in
+            // --- Conditional Firestore update based on current account status ---
             if (signedInUser && signedInUser.uid) { 
-                console.log("Attempting to update Firestore status for UID:", signedInUser.uid);
-                // Dynamically import updateDoc and doc for direct use here.
-                // These imports are already at the top of the file now.
-                await updateDoc(doc(db, 'users', signedInUser.uid), { 
-                    accountStatus: 'Awaiting Admin Approval',
-                    // Adding updatedAt timestamp which is good practice for status changes
-                    updatedAt: serverTimestamp() 
-                });
-                console.log("Firestore status updated to Awaiting Admin Approval after password reset verification for:", signedInUser.email);
+                const userData = await getUserProfile(signedInUser.uid); // Fetch latest user data
+
+                if (userData) {
+                    if (userData.accountStatus === 'Awaiting Email Verification') {
+                        console.log("Account status is 'Awaiting Email Verification'. Updating to 'Awaiting Admin Approval' for UID:", signedInUser.uid);
+                        await updateDoc(doc(db, 'users', signedInUser.uid), { 
+                            accountStatus: 'Awaiting Admin Approval',
+                            updatedAt: serverTimestamp() 
+                        });
+                        notificationMessage = 'Your account has been fully verified and is now awaiting Admin approval. Once approved, you may log in to your account and enjoy!';
+                        notificationType = 'success';
+                        console.log("Firestore status updated to Awaiting Admin Approval.");
+                    } else if (userData.accountStatus === 'Access Granted') {
+                        console.log("Account status is 'Access Granted', no change needed for UID:", signedInUser.uid);
+                        notificationMessage = 'Password has been changed successfully!';
+                        notificationType = 'success';
+                    } else {
+                        console.warn("User data found, but status not 'Awaiting Email Verification' or 'Access Granted'. Current status:", userData.accountStatus, "Status not updated after password reset.");
+                        notificationMessage = 'Password has been changed successfully. Your account status is ' + userData.accountStatus + '. Please contact support if needed.';
+                        notificationType = 'info'; // Use info for a softer message
+                    }
+                } else {
+                    console.warn("User data not found for UID:", signedInUser.uid, ". Status not updated after password reset.");
+                    notificationMessage = 'Password has been changed successfully, but user data could not be retrieved. Please log in or contact support.';
+                    notificationType = 'info'; // Use info for a softer message
+                }
             } else {
                 console.warn("Signed-in user or UID not available for Firestore status update.");
+                notificationMessage = 'Password has been changed successfully, but account status could not be updated. Please log in or contact support.';
+                notificationType = 'info'; // Use info for a softer message
             }
+            // --- End Conditional Firestore update ---
 
             resetPasswordForm.reset(); 
             if (resetPasswordAndVerifyModal) resetPasswordAndVerifyModal.style.display = 'none'; 
 
             displayGlobalNotification(
-                'Your account has been fully verified and is now awaiting Admin approval. Once approved, you may log in to your account and enjoy!',
-                'success',
+                notificationMessage,
+                notificationType,
                 () => { 
                     if (loginModal) loginModal.style.display = 'flex'; 
                     clearAllMessages(); 
@@ -580,8 +603,7 @@ if (resetPasswordForm) { // Added check
                 errorMessage, 
                 'error', 
                 () => {
-                    // Always redirect to invalidVerificationLinkModal if there's a password reset error
-                    if (invalidVerificationLinkModal) invalidVerificationLinkModal.style.display = 'flex';
+                    if (invalidVerificationLinkModal) invalidVerificationLinkModal.style.display = 'flex'; // Redirect to resend form
                     const resendEmailInputRef = document.getElementById('resendEmailInput');
                     // Try to pre-fill email if oobCodeEmail is available
                     if (resendEmailInputRef && oobCodeEmail) resendEmailInputRef.value = oobCodeEmail;
@@ -814,9 +836,9 @@ const handleOobCode = async () => {
 
                 let errorMessage = 'The password reset link is invalid or has expired. Please use the "Forgot Password/Resend Email Verification Link?" link on the login form to request a new one.';
                 if (error.code === 'auth/invalid-action-code') {
-                    errorMessage = 'The password reset link is invalid or has already been used. Please use the "Forgot Password/Resend Email Verification Link?" link on the login form to request a new link.';
+                    errorMessage = 'The link is invalid or has already been used. Please try resending a new link.';
                 } else if (error.code === 'auth/user-disabled') {
-                     errorMessage = 'Your account has been disabled. Please contact support.';
+                     errorMessage = 'Your account has been disabled.';
                 } else if (error.code === 'auth/action-code-expired') { // Explicitly handle expired code
                      errorMessage = 'The password reset link has expired. Please use the "Forgot Password/Resend Email Verification Link?" link on the login form to request a new one.';
                 }
