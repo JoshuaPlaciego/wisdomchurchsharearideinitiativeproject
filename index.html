@@ -115,7 +115,7 @@
             <span class="close-button">&times;</span> 
             <div class="modal-header-fixed">
                 <h2>Email Verification Process</h2>
-                <p>To be completely verified and progress to account activation, please key in your credentials below!</p>
+                <p>To be completely verified and progress to account activation, logging in with your credential is required!</p>
                 <div id="verificationLoginMessage" class="message-box"></div>
             </div>
             <div class="modal-body-scrollable">
@@ -173,14 +173,17 @@
         </div>
     </div>
 
-    <!-- Hybrid Role Selection Modal -->
-    <div id="hybridRoleModal" class="modal">
+    <!-- Role Selection Modal (formerly Hybrid Role Selection Modal) -->
+    <div id="roleSelectionModal" class="modal">
         <div class="modal-content">
-            <!-- Hybrid role modal doesn't have messages or long forms, so simple structure is fine -->
-            <h2>Choose Your Role</h2>
-            <p>You have a hybrid account. How would you like to log in?</p>
-            <button id="loginAsDriver">Log In as Driver</button>
-            <button id="loginAsPassenger">Log In as Passenger</button>
+            <span class="close-button">&times;</span>
+            <div class="modal-header-fixed">
+                <h2>Choose Your Role</h2>
+                <p>Please select which role you'd like to access:</p>
+            </div>
+            <div class="modal-body-scrollable" id="roleSelectionButtonsContainer">
+                <!-- Buttons will be injected here by JavaScript -->
+            </div>
         </div>
     </div>
 

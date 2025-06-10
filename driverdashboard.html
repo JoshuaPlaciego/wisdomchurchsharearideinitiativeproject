@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Driver Dashboard - Share A Ride</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <!-- Global Notification Message Box -->
+    <div id="notificationMessageBox" class="global-message-box"></div>
+
+    <header>
+        <h1>Driver Dashboard</h1>
+        <nav>
+            <!-- New Role Selection Dropdown -->
+            <div class="role-selector-container">
+                <select id="roleSelector" class="role-selector">
+                    <option value="">Switch Role</option>
+                    <!-- Options will be populated by JavaScript -->
+                </select>
+            </div>
+            <button id="logoutButton">Log Out</button>
+        </nav>
+    </header>
+
+    <main>
+        <h2>Welcome, Driver!</h2>
+        <p>Manage your rides and passengers here.</p>
+        <!-- Driver specific content would go here -->
+        <section class="dashboard-section">
+            <h3>Your Scheduled Rides</h3>
+            <div class="card">
+                <h4>Ride to Makati</h4>
+                <p>Date: 2025-06-15</p>
+                <p>Time: 08:00 AM</p>
+                <p>Passengers: 3</p>
+                <button>View Details</button>
+            </div>
+            <div class="card">
+                <h4>Ride to Quezon City</h4>
+                <p>Date: 2025-06-16</p>
+                <p>Time: 05:30 PM</p>
+                <p>Passengers: 1</p>
+                <button>View Details</button>
+            </div>
+        </section>
+
+        <section class="dashboard-section">
+            <h3>Find New Passengers</h3>
+            <p>List available seats for upcoming trips.</p>
+            <button>Post New Ride</button>
+        </section>
+
+    </main>
+
+    <!-- Import Firebase Auth and Firestore modules -->
+    <script type="module" src="js/auth.js"></script>
+    <!-- Import the shared dashboard roles script -->
+    <script type="module" src="js/dashboard_roles.js"></script>
+    <!-- Driver-specific script if any -->
+    <script type="module">
+        // Example of driver-specific script (if needed)
+        // const logoutButton = document.getElementById('logoutButton');
+        // import { signOut, auth } from './auth.js';
+        // logoutButton.addEventListener('click', async () => {
+        //     await signOut(auth);
+        //     window.location.href = 'index.html';
+        // });
+        console.log("Driver dashboard loaded.");
+    </script>
+</body>
+</html>

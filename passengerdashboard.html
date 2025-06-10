@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Passenger Dashboard - Share A Ride</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <!-- Global Notification Message Box -->
+    <div id="notificationMessageBox" class="global-message-box"></div>
+
+    <header>
+        <h1>Passenger Dashboard</h1>
+        <nav>
+            <!-- New Role Selection Dropdown -->
+            <div class="role-selector-container">
+                <select id="roleSelector" class="role-selector">
+                    <option value="">Switch Role</option>
+                    <!-- Options will be populated by JavaScript -->
+                </select>
+            </div>
+            <button id="logoutButton">Log Out</button>
+        </nav>
+    </header>
+
+    <main>
+        <h2>Welcome, Passenger!</h2>
+        <p>Find rides that fit your schedule and destination.</p>
+        <!-- Passenger specific content would go here -->
+        <section class="dashboard-section">
+            <h3>Available Rides Near You</h3>
+            <div class="card">
+                <h4>Ride to Manila</h4>
+                <p>Date: 2025-06-15</p>
+                <p>Time: 09:00 AM</p>
+                <p>Driver: John Doe</p>
+                <button>Request Ride</button>
+            </div>
+            <div class="card">
+                <h4>Ride to Pasig</h4>
+                <p>Date: 2025-06-16</p>
+                <p>Time: 06:00 PM</p>
+                <p>Driver: Jane Smith</p>
+                <button>Request Ride</button>
+            </div>
+        </section>
+
+        <section class="dashboard-section">
+            <h3>Your Booked Rides</h3>
+            <p>View details of your upcoming and past rides.</p>
+            <button>View Bookings</button>
+        </section>
+
+    </main>
+
+    <!-- Import Firebase Auth and Firestore modules -->
+    <script type="module" src="js/auth.js"></script>
+    <!-- Import the shared dashboard roles script -->
+    <script type="module" src="js/dashboard_roles.js"></script>
+    <!-- Passenger-specific script if any -->
+    <script type="module">
+        // Example of passenger-specific script (if needed)
+        // const logoutButton = document.getElementById('logoutButton');
+        // import { signOut, auth } from './auth.js';
+        // logoutButton.addEventListener('click', async () => {
+        //     await signOut(auth);
+        //     window.location.href = 'index.html';
+        // });
+        console.log("Passenger dashboard loaded.");
+    </script>
+</body>
+</html>

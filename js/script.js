@@ -33,7 +33,10 @@ const loginModal = document.getElementById('loginModal');
 const emailVerificationLoginModal = document.getElementById('emailVerificationLoginModal');
 const invalidVerificationLinkModal = document.getElementById('invalidVerificationLinkModal'); // Now also used for forgot password
 const resetPasswordAndVerifyModal = document.getElementById('resetPasswordAndVerifyModal'); 
-const hybridRoleModal = document.getElementById('hybridRoleModal');
+// RENAMED: from hybridRoleModal to roleSelectionModal
+const roleSelectionModal = document.getElementById('roleSelectionModal'); 
+const roleSelectionButtonsContainer = document.getElementById('roleSelectionButtonsContainer');
+
 
 const closeButtons = document.querySelectorAll('.close-button');
 const signupForm = document.getElementById('signupForm');
@@ -66,8 +69,7 @@ const newPassword = document.getElementById('newPassword');
 const confirmNewPassword = document.getElementById('confirmNewPassword'); 
 const newPasswordStrength = document.getElementById('newPasswordStrength'); 
 
-const loginAsDriverBtn = document.getElementById('loginAsDriver');
-const loginAsPassengerBtn = document.getElementById('loginAsPassenger');
+// Removed: loginAsDriverBtn, loginAsPassengerBtn as they will be dynamically created now
 
 // New elements for invalidVerificationLinkModal
 const resendEmailInput = document.getElementById('resendEmailInput');
@@ -85,7 +87,7 @@ console.log('loginModal:', loginModal);
 console.log('emailVerificationLoginModal:', emailVerificationLoginModal);
 console.log('invalidVerificationLinkModal:', invalidVerificationLinkModal);
 console.log('resetPasswordAndVerifyModal:', resetPasswordAndVerifyModal);
-console.log('hybridRoleModal:', hybridRoleModal);
+console.log('roleSelectionModal:', roleSelectionModal); // Updated
 console.log('forgotPasswordLink:', forgotPasswordLink);
 console.log('notificationMessageBox:', notificationMessageBox);
 // Add similar logs for other elements if you suspect they might be null
@@ -189,7 +191,7 @@ window.addEventListener('click', (event) => {
     if (event.target === resetPasswordAndVerifyModal && event.target.querySelector('.close-button') === null) {
            // Do nothing to prevent closing by clicking outside this modal
     }
-    if (event.target === hybridRoleModal) {
+    if (event.target === roleSelectionModal) { // Updated
            // Do nothing to prevent closing by clicking outside this modal
     }
 });
@@ -241,7 +243,7 @@ const displayGlobalNotification = (message, type, onCloseCallback = null) => {
 
     // Clear any previous messages and remove any existing backdrop
     clearAllMessages(); 
-    removeGlobalBackdrop(); // Ensure any old backdrop is gone
+    removeGlobalBackdrop(); 
 
     // Create and append the backdrop
     globalBackdrop = document.createElement('div');
@@ -252,57 +254,49 @@ const displayGlobalNotification = (message, type, onCloseCallback = null) => {
     notificationMessageBox.innerHTML = '';
     notificationMessageBox.textContent = message;
     notificationMessageBox.className = `global-message-box ${type}`;
-    notificationMessageBox.style.display = 'flex'; // Use flex for centering via CSS
+    notificationMessageBox.style.display = 'flex'; 
     notificationMessageBox.style.opacity = '1';
 
     // Create a close icon
     const closeIcon = document.createElement('span');
-    closeIcon.textContent = '✖'; // Unicode multiplication sign for a common close icon
-    closeIcon.className = 'global-message-close-icon'; // Add a class for styling
+    closeIcon.textContent = '✖'; 
+    closeIcon.className = 'global-message-close-icon'; 
     closeIcon.style.cursor = 'pointer';
-    closeIcon.style.marginLeft = '10px'; // Space from message
-    closeIcon.style.fontWeight = 'bold'; // Make it stand out
-    closeIcon.style.fontSize = '1.2em'; // Adjust size
+    closeIcon.style.marginLeft = '10px'; 
+    closeIcon.style.fontWeight = 'bold'; 
+    closeIcon.style.fontSize = '1.2em'; 
 
     closeIcon.onclick = () => {
         notificationMessageBox.style.opacity = '0';
-        // Add a slight delay for the fade-out effect before removing
         setTimeout(() => {
             notificationMessageBox.style.display = 'none';
-            notificationMessageBox.innerHTML = ''; // Clear content
-            removeGlobalBackdrop(); // Remove the backdrop when the notification closes
-            if (onCloseCallback) { // Execute callback when notification is closed
+            notificationMessageBox.innerHTML = ''; 
+            removeGlobalBackdrop(); 
+            if (onCloseCallback) { 
                 onCloseCallback();
             }
-        }, 300); // Small delay for fade out effect
+        }, 300); 
     };
 
     notificationMessageBox.appendChild(closeIcon);
 };
 
-// Helper function to remove the global backdrop
+// Helper function to remove the global backdrop (copied from script.js)
 const removeGlobalBackdrop = () => {
     if (globalBackdrop && globalBackdrop.parentNode) {
         globalBackdrop.parentNode.removeChild(globalBackdrop);
-        globalBackdrop = null; // Reset the reference
+        globalBackdrop = null; 
     }
 };
 
-
-// Clears all message boxes and the global backdrop
+// Clears all messages (including global)
 const clearAllMessages = () => {
-    displayModalMessage(signupMessage, '', '');
-    displayModalMessage(loginMessage, '', '');
-    displayModalMessage(verificationLoginMessage, '', '');
-    displayModalMessage(resendMessage, '', '');
-    displayModalMessage(resetPasswordMessage, '', ''); 
-
     if (notificationMessageBox) {
         notificationMessageBox.style.display = 'none';
         notificationMessageBox.style.opacity = '0';
         notificationMessageBox.innerHTML = ''; 
     }
-    removeGlobalBackdrop(); // Also remove backdrop when clearing all messages
+    removeGlobalBackdrop();
 };
 
 
@@ -403,13 +397,9 @@ if (emailVerificationLoginForm) { // Added check
             const user = userCredential.user;
 
             // Ensure the Firebase user's email is actually verified.
-            // This is a crucial check. If they arrived here from an expired link, Firebase's
-            // `user.emailVerified` might still be false. If it's true, it means verification
-            // already happened (perhaps through another link or manual verification).
             if (!user.emailVerified) {
                 displayModalMessage(verificationLoginMessage, 'Email not yet verified by Firebase. Please use the "Forgot Password/Resend Email Verification Link?" option to get a new link.', 'error');
                 emailVerificationLoginForm.reset(); 
-                // We don't sign out immediately here, giving them a chance to retry or realize.
                 return;
             }
 
@@ -426,9 +416,7 @@ if (emailVerificationLoginForm) { // Added check
             const currentAccountStatus = userData.accountStatus;
 
             if (currentAccountStatus === 'Awaiting Email Verification') {
-                // If the email is verified by Firebase AND Firestore status is 'Awaiting Email Verification',
-                // then we can update the status to 'Awaiting Admin Approval' and guide the user.
-                await updateUserAccountStatus(user.uid, 'Awaiting Admin Approval'); // Use the new function
+                await updateUserAccountStatus(user.uid, 'Awaiting Admin Approval'); 
 
                 emailVerificationLoginForm.reset(); 
                 if (emailVerificationLoginModal) emailVerificationLoginModal.style.display = 'none'; 
@@ -442,20 +430,17 @@ if (emailVerificationLoginForm) { // Added check
                     }
                 );
             } else {
-                // Account status is not 'Awaiting Email Verification'. Inform the user with a global notification.
-                // Upon closing the notification, they will be redirected to the main login form.
-                emailVerificationLoginForm.reset(); // Clear form for next attempt
-                if (emailVerificationLoginModal) emailVerificationLoginModal.style.display = 'none'; // Hide this modal
+                emailVerificationLoginForm.reset(); 
+                if (emailVerificationLoginModal) emailVerificationLoginModal.style.display = 'none'; 
 
                 displayGlobalNotification(
                     `Your account status is currently "${currentAccountStatus}". Please proceed to the main login or contact support if you need further assistance.`, 
-                    'error', // Using 'error' type for a more prominent message
+                    'error', 
                     () => {
-                        if (loginModal) loginModal.style.display = 'flex'; // Redirect to main login
-                        clearAllMessages(); // Clear messages after redirection
+                        if (loginModal) loginModal.style.display = 'flex'; 
+                        clearAllMessages(); 
                     }
                 );
-                // Optionally sign out the user if this status is not expected here
                 await signOut(auth); 
             }
 
@@ -483,14 +468,14 @@ if (resetPasswordForm) { // Added check
         clearAllMessages(); 
 
         const newPass = newPassword?.value;
-        const confirmedNewPasswordValue = confirmNewPassword?.value; // Renamed variable here
+        const confirmedNewPasswordValue = confirmNewPassword?.value; 
 
-        if (!newPass || !confirmedNewPasswordValue) { // Used renamed variable here
+        if (!newPass || !confirmedNewPasswordValue) { 
              displayModalMessage(resetPasswordMessage, 'Please enter and confirm your new password.', 'error');
              return;
         }
 
-        if (newPass !== confirmedNewPasswordValue) { // Used renamed variable here
+        if (newPass !== confirmedNewPasswordValue) { 
             displayModalMessage(resetPasswordMessage, 'Passwords do not match.', 'error');
             return;
         }
@@ -506,22 +491,18 @@ if (resetPasswordForm) { // Added check
             return;
         }
 
-        // ADDED LOG: Log currentOobCode before attempting password reset
         console.log("Attempting password change with oobCode:", currentOobCode);
         console.log("auth.currentUser before confirmPasswordReset:", auth.currentUser);
 
-        let notificationMessage = ''; // Variable to hold the custom notification message
-        let notificationType = 'success'; // Default type for success messages
+        let notificationMessage = ''; 
+        let notificationType = 'success'; 
 
         try {
-            // Use confirmPasswordReset specifically for password reset links with oobCode
             await confirmPasswordReset(auth, currentOobCode, newPass);
             console.log("Password updated using confirmPasswordReset!");
 
-            // ✅ NEW STEP: Sign the user in explicitly after a successful password reset
-            // This ensures their authentication state is fresh and ready for Firestore writes.
             let signedInUser = null;
-            if (oobCodeEmail) { // Ensure we have the email from the OOB code
+            if (oobCodeEmail) { 
                 const userCredentialAfterReset = await signInWithEmailAndPassword(auth, oobCodeEmail, newPass);
                 signedInUser = userCredentialAfterReset.user;
                 console.log("User successfully signed in after password reset. UID:", signedInUser.uid);
@@ -529,9 +510,8 @@ if (resetPasswordForm) { // Added check
                 console.warn("oobCodeEmail was not set, cannot explicitly sign in user after password reset.");
             }
 
-            // --- Conditional Firestore update based on current account status ---
             if (signedInUser && signedInUser.uid) { 
-                const userData = await getUserProfile(signedInUser.uid); // Fetch latest user data
+                const userData = await getUserProfile(signedInUser.uid); 
 
                 if (userData) {
                     if (userData.accountStatus === 'Awaiting Email Verification') {
@@ -547,26 +527,25 @@ if (resetPasswordForm) { // Added check
                         console.log("Account status is 'Access Granted', no change needed for UID:", signedInUser.uid);
                         notificationMessage = 'Password has been changed successfully!';
                         notificationType = 'success';
-                    } else if (userData.accountStatus === 'Awaiting Admin Approval') { // NEW CONDITION
+                    } else if (userData.accountStatus === 'Awaiting Admin Approval') { 
                         console.log("Account status is 'Awaiting Admin Approval', no change needed. Showing specific message for UID:", signedInUser.uid);
                         notificationMessage = 'Password has been changed successfully and is now awaiting Admin approval. Once approved, you may log in to your account and enjoy!';
                         notificationType = 'success';
                     } else {
                         console.warn("User data found, but status not 'Awaiting Email Verification', 'Access Granted', or 'Awaiting Admin Approval'. Current status:", userData.accountStatus, "Status not updated after password reset.");
                         notificationMessage = 'Password has been changed successfully. Your account status is ' + userData.accountStatus + '. Please contact support if needed.';
-                        notificationType = 'info'; // Use info for a softer message
+                        notificationType = 'info'; 
                     }
                 } else {
                     console.warn("User data not found for UID:", signedInUser.uid, ". Status not updated after password reset.");
                     notificationMessage = 'Password has been changed successfully, but user data could not be retrieved. Please log in or contact support.';
-                    notificationType = 'info'; // Use info for a softer message
+                    notificationType = 'info'; 
                 }
             } else {
                 console.warn("Signed-in user or UID not available for Firestore status update.");
                 notificationMessage = 'Password has been changed successfully, but account status could not be updated. Please log in or contact support.';
-                notificationType = 'info'; // Use info for a softer message
+                notificationType = 'info'; 
             }
-            // --- End Conditional Firestore update ---
 
             resetPasswordForm.reset(); 
             if (resetPasswordAndVerifyModal) resetPasswordAndVerifyModal.style.display = 'none'; 
@@ -582,10 +561,8 @@ if (resetPasswordForm) { // Added check
 
         } catch (error) {
             console.error("Error setting new password and verifying:", error);
-            // Log the specific error code for debugging
             console.error("Firebase error code for password reset attempt:", error.code); 
 
-            // This message now becomes a global notification
             let errorMessage = "Failed to set new password. The link might be invalid or expired. Please try resending.";
             if (error.code === 'auth/invalid-action-code') {
                 errorMessage = 'The link is invalid or has already been used. Please try resending a new link.';
@@ -594,26 +571,22 @@ if (resetPasswordForm) { // Added check
             } else if (error.code === 'auth/weak-password') {
                 errorMessage = 'Password is too weak. Please ensure it meets the criteria.'; 
             } else if (error.code === 'auth/requires-recent-login') {
-                // While we're using confirmPasswordReset, this specific error should ideally not occur here.
-                // If it does, it might indicate a very deep session issue or a misconfigured redirect.
                 errorMessage = 'Please sign in again to change your password. You will need to request a new password reset link.';
-            } else if (error.code === 'auth/user-not-found') { // Add explicit handling for user-not-found for clarity
+            } else if (error.code === 'auth/user-not-found') { 
                 errorMessage = 'The user associated with this link was not found. Please ensure the link is correct.';
             }
             
-            // Display as global notification and on close, redirect to invalidVerificationLinkModal
-            if (resetPasswordAndVerifyModal) resetPasswordAndVerifyModal.style.display = 'none'; // Hide the current modal
+            if (resetPasswordAndVerifyModal) resetPasswordAndVerifyModal.style.display = 'none'; 
             displayGlobalNotification(
                 errorMessage, 
                 'error', 
                 () => {
-                    if (invalidVerificationLinkModal) invalidVerificationLinkModal.style.display = 'flex'; // Redirect to resend form
+                    if (invalidVerificationLinkModal) invalidVerificationLinkModal.style.display = 'flex'; 
                     const resendEmailInputRef = document.getElementById('resendEmailInput');
-                    // Try to pre-fill email if oobCodeEmail is available
-                    if (resendEmailInputRef && oobCodeEmail) resendEmailInputRef.value = oobCodeEmail;
-                    currentOobCode = null; // Clear oobCode as it's invalid/expired
-                    oobCodeEmail = null; // Clear email
-                    clearAllMessages(); // Clear messages after redirection
+                    if(resendEmailInputRef && oobCodeEmail) resendEmailInputRef.value = oobCodeEmail; 
+                    currentOobCode = null; 
+                    oobCodeEmail = null; 
+                    clearAllMessages(); 
                 }
             );
         }
@@ -624,7 +597,7 @@ if (resetPasswordForm) { // Added check
 
 
 // --- Main Login Form Submission ---
-if (loginForm) { // Added check
+if (loginForm) { 
     loginForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         clearAllMessages(); 
@@ -641,10 +614,16 @@ if (loginForm) { // Added check
             const userCredential = await signInWithEmailAndPassword(auth, email, password); 
             const user = userCredential.user;
 
-            // CHANGE START: Modified this section to use global notification and redirect to Email Verification Login Form
+            // Fetch user data from Firestore AND get ID token claims for admin check
+            const [userData, idTokenResult] = await Promise.all([
+                getUserProfile(user.uid),
+                user.getIdTokenResult() // Get claims including custom claims
+            ]);
+
+            // If email is not verified, redirect to verification login form
             if (!user.emailVerified) {
-                loginForm.reset(); // Clear login form
-                if (loginModal) loginModal.style.display = 'none'; // Hide main login modal
+                loginForm.reset(); 
+                if (loginModal) loginModal.style.display = 'none'; 
 
                 displayGlobalNotification(
                     'Your email is not yet verified. Please complete the verification process by logging in to the Email Verification Form.',
@@ -652,46 +631,68 @@ if (loginForm) { // Added check
                     () => {
                         if (emailVerificationLoginModal) emailVerificationLoginModal.style.display = 'flex';
                         const verificationEmailInput = document.getElementById('verificationEmail');
-                        if (verificationEmailInput) verificationEmailInput.value = email; // Pre-fill email in verification form
+                        if (verificationEmailInput) verificationEmailInput.value = email; 
                         const verificationPasswordInput = document.getElementById('verificationPassword');
-                        if (verificationPasswordInput) verificationPasswordInput.value = ''; // Clear password field
+                        if (verificationPasswordInput) verificationPasswordInput.value = ''; 
                         clearAllMessages();
                     }
                 );
-                return; // Stop further execution in this block
+                return; 
             }
-            // CHANGE END
 
-            // Get the user's profile from Firestore to check their account status
-            const userData = await getUserProfile(user.uid);
-
+            // Check if user data exists in Firestore
             if (!userData) { 
                 displayModalMessage(loginMessage, 'User data not found. Please contact support.', 'error');
-                await signOut(auth); // Sign out if no user data in Firestore
+                await signOut(auth); 
                 loginForm.reset(); 
                 return;
             }
 
             const accountStatus = userData.accountStatus;
             const userRole = userData.role;
+            const isAdmin = idTokenResult.claims.admin === true; // Check admin claim
 
+            // --- Handle redirection based on account status and admin privilege ---
             if (accountStatus === 'Access Granted') {
-                displayGlobalNotification('Login successful! Redirecting to dashboard.', 'success');
                 loginForm.reset(); 
                 if (loginModal) loginModal.style.display = 'none';
-                setTimeout(() => {
-                    if (userRole === 'driver') {
-                        window.location.href = 'driverdashboard.html';
-                    } else if (userRole === 'passenger') {
-                        window.location.href = 'passengerdashboard.html';
-                    } else if (userRole === 'hybrid') {
-                        if (hybridRoleModal) hybridRoleModal.style.display = 'flex';
-                    }
-                }, 500); 
 
+                // Store user's primary role and admin status in session storage
+                sessionStorage.setItem('currentUserRole', userRole);
+                sessionStorage.setItem('isAdmin', isAdmin ? 'true' : 'false');
+
+                // Determine roles to show in modal (driver, passenger, admin)
+                const availableRoles = [];
+                if (userRole === 'driver' || userRole === 'hybrid') {
+                    availableRoles.push('driver');
+                }
+                if (userRole === 'passenger' || userRole === 'hybrid') {
+                    availableRoles.push('passenger');
+                }
+                if (isAdmin) {
+                    availableRoles.push('admin');
+                }
+
+                // If only one role is available and not admin, redirect directly
+                if (availableRoles.length === 1 && !isAdmin) {
+                    displayGlobalNotification('Login successful! Redirecting to dashboard.', 'success');
+                    setTimeout(() => {
+                        if (userRole === 'driver') {
+                            window.location.href = 'driverdashboard.html';
+                        } else if (userRole === 'passenger') {
+                            window.location.href = 'passengerdashboard.html';
+                        }
+                    }, 500);
+                } else {
+                    // Show role selection modal for hybrid or admin users
+                    displayGlobalNotification('Login successful! Please select your role.', 'success', () => {
+                         populateRoleSelectionModal(availableRoles);
+                         if (roleSelectionModal) roleSelectionModal.style.display = 'flex';
+                         clearAllMessages(); // Clear global message after showing modal
+                    });
+                }
+                
             } else if (accountStatus === 'Awaiting Email Verification') {
-                // This block is for when a user with an already verified email (by Firebase) but 'Awaiting Email Verification'
-                // Firestore status logs in from the main login. They are explicitly guided to the verification login.
                 displayModalMessage(loginMessage, 'Your email has been verified. Please log in here to complete account activation.', 'success');
                 if (emailVerificationLoginModal) emailVerificationLoginModal.style.display = 'flex'; 
                 const verificationEmailInput = document.getElementById('verificationEmail');
@@ -723,24 +724,37 @@ if (loginForm) { // Added check
 }
 
 
-// Hybrid Role Selection
-if (loginAsDriverBtn) { // Added check
-    loginAsDriverBtn.addEventListener('click', () => {
-        if (hybridRoleModal) hybridRoleModal.style.display = 'none';
-        window.location.href = 'driverdashboard.html';
-    });
-} else {
-    console.warn("Login as driver button not found.");
-}
+// --- Populate and Handle Role Selection Modal ---
+/**
+ * Populates the role selection modal with buttons based on available roles.
+ * @param {Array<string>} roles - An array of roles available to the user (e.g., ['driver', 'passenger', 'admin']).
+ */
+const populateRoleSelectionModal = (roles) => {
+    if (!roleSelectionButtonsContainer) {
+        console.error("Role selection buttons container not found!");
+        return;
+    }
+    roleSelectionButtonsContainer.innerHTML = ''; // Clear previous buttons
 
-if (loginAsPassengerBtn) { // Added check
-    loginAsPassengerBtn.addEventListener('click', () => {
-        if (hybridRoleModal) hybridRoleModal.style.display = 'none';
-        window.location.href = 'passengerdashboard.html'; 
+    roles.forEach(role => {
+        const button = document.createElement('button');
+        button.className = 'role-select-button'; // Add a class for styling
+        button.textContent = `Log In as ${role.charAt(0).toUpperCase() + role.slice(1)}`; // Capitalize first letter
+
+        button.addEventListener('click', () => {
+            if (roleSelectionModal) roleSelectionModal.style.display = 'none';
+            // Redirect based on selected role
+            if (role === 'driver') {
+                window.location.href = 'driverdashboard.html';
+            } else if (role === 'passenger') {
+                window.location.href = 'passengerdashboard.html';
+            } else if (role === 'admin') {
+                window.location.href = 'admin_dashboard.html';
+            }
+        });
+        roleSelectionButtonsContainer.appendChild(button);
     });
-} else {
-    console.warn("Login as passenger button not found.");
-}
+};
 
 
 // Function to handle email verification link clicks (oobCode)
@@ -751,45 +765,37 @@ const handleOobCode = async () => {
 
     if (oobCode) { 
         currentOobCode = oobCode; 
-        clearAllMessages(); // Clear messages initially
+        clearAllMessages(); 
 
         if (mode === 'verifyEmail') {
             let emailFromOob = '';
             try {
-                // Check the action code to get the email before attempting to apply it.
-                // This allows us to pre-fill the email even if the code is expired or invalid for direct application.
                 const info = await checkActionCode(auth, oobCode);
                 emailFromOob = info.data.email; 
-                oobCodeEmail = emailFromOob; // Store the email globally
+                oobCodeEmail = emailFromOob; 
                 console.log(`handleOobCode: Processing verifyEmail for: ${emailFromOob}`);
 
-                // Attempt to apply the action code. This is where it will fail if expired or already used.
                 await applyActionCode(auth, oobCode); 
                 console.log("Email verification successful via OOB code!");
 
-                // If applyActionCode succeeds, the email is now verified by Firebase.
-                // Redirect user to the Email Verification Login Form with a success message.
-                history.replaceState({}, document.title, window.location.pathname); // Clean URL
+                history.replaceState({}, document.title, window.location.pathname); 
                 displayGlobalNotification(
-                    'Verification link validated! Please log in to the Email Verification Form to complete account activation.', 
+                    'Your email has been successfully verified! Please log in to the Email Verification Form to complete account activation.', 
                     'success', 
-                    () => {
+                    (() => {
                         if (emailVerificationLoginModal) emailVerificationLoginModal.style.display = 'flex';
                         const verificationEmailInput = document.getElementById('verificationEmail');
-                        if (verificationEmailInput) verificationEmailInput.value = emailFromOob; // Pre-fill email
+                        if (verificationEmailInput) verificationEmailInput.value = emailFromOob; 
                         const verificationPasswordInput = document.getElementById('verificationPassword');
-                        if (verificationPasswordInput) verificationPasswordInput.value = ''; // Clear password field
+                        if (verificationPasswordInput) verificationPasswordInput.value = ''; 
                         clearAllMessages();
-                    }
+                    }) // Ensure this is a function call
                 );
             } catch (error) {
                 console.error("Error handling email verification link (verifyEmail mode):", error);
                 
-                // If `applyActionCode` failed (e.g., invalid/expired link, already used),
-                // redirect to the `invalidVerificationLinkModal` (resend form) if expired, else to `emailVerificationLoginModal`.
                 let message = '';
                 if (error.code === 'auth/expired-action-code') {
-                    // Mirror password reset expired flow
                     message = 'The verification link has expired. Please use the "Forgot Password/Resend Email Verification Link?" option to request a new link.';
                     if (emailVerificationLoginModal) emailVerificationLoginModal.style.display = 'none'; 
                     displayGlobalNotification(
@@ -798,19 +804,19 @@ const handleOobCode = async () => {
                         () => {
                             if (invalidVerificationLinkModal) invalidVerificationLinkModal.style.display = 'flex';
                             const resendEmailInputRef = document.getElementById('resendEmailInput');
-                            if(resendEmailInputRef && oobCodeEmail) resendEmailInputRef.value = oobCodeEmail; // Pre-fill email
-                            currentOobCode = null; // Clear oobCode as it's invalid/expired
-                            oobCodeEmail = null; // Clear email
-                            clearAllMessages(); // Clear messages after redirection
+                            if(resendEmailInputRef && oobCodeEmail) resendEmailInputRef.value = oobCodeEmail; 
+                            currentOobCode = null; 
+                            oobCodeEmail = null; 
+                            clearAllMessages(); 
                         }
                     );
-                    history.replaceState({}, document.title, window.location.pathname); // Clean URL
-                    return; // Exit as we've handled the redirection
+                    history.replaceState({}, document.title, window.location.pathname); 
+                    return; 
                 } else if (error.code === 'auth/invalid-action-code') {
                     message = 'The verification link is invalid or has already been used. Please log in below to check your account status.';
                     if (emailVerificationLoginModal) emailVerificationLoginModal.style.display = 'flex';
                     const verificationEmailInput = document.getElementById('verificationEmail');
-                    if (verificationEmailInput) verificationEmailInput.value = emailFromOob || ''; // Pre-fill email if obtained
+                    if (verificationEmailInput) verificationEmailInput.value = emailFromOob || ''; 
                     const verificationPasswordInput = document.getElementById('verificationPassword');
                     if (verificationPasswordInput) verificationPasswordInput.value = '';
                     displayModalMessage(verificationLoginMessage, message, 'error');
@@ -829,14 +835,13 @@ const handleOobCode = async () => {
                     displayModalMessage(verificationLoginMessage, message, 'error');
                 }
 
-                history.replaceState({}, document.title, window.location.pathname); // Clean URL
+                history.replaceState({}, document.title, window.location.pathname); 
             }
         } else if (mode === 'resetPassword') { 
             try {
                 const info = await checkActionCode(auth, oobCode); 
                 oobCodeEmail = info.data.email; 
                 console.log("Password reset code checked and is valid. Email:", oobCodeEmail, ". Proceed to set new password.");
-                console.log("auth.currentUser AFTER checkActionCode for resetPassword:", auth.currentUser); // This log is informational, auth.currentUser is not strictly required for confirmPasswordReset
 
                 clearAllMessages();
                 if (invalidVerificationLinkModal) invalidVerificationLinkModal.style.display = 'none'; 
@@ -851,32 +856,31 @@ const handleOobCode = async () => {
                 history.replaceState({}, document.title, window.location.pathname); 
 
             } catch (error) {
-                console.error("Error checking password reset code (mode=resetPassword):", error); // More specific log
+                console.error("Error checking password reset code (mode=resetPassword):", error); 
                 clearAllMessages();
                 if (invalidVerificationLinkModal) invalidVerificationLinkModal.style.display = 'none'; 
                 if (emailVerificationLoginModal) emailVerificationLoginModal.style.display = 'none'; 
                 if (resetPasswordAndVerifyModal) resetPasswordAndVerifyModal.style.display = 'none'; 
                 
-                // Always go to resend/forgot password modal if resetPassword code itself is invalid/expired
-                if (loginModal) loginModal.style.display = 'none'; // Ensure main login is hidden if it was open
+                if (loginModal) loginModal.style.display = 'none'; 
 
                 let errorMessage = 'The password reset link is invalid or has expired. Please use the "Forgot Password/Resend Email Verification Link?" link on the login form to request a new one.';
                 if (error.code === 'auth/invalid-action-code') {
                     errorMessage = 'The link is invalid or has already been used. Please try resending a new link.';
                 } else if (error.code === 'auth/user-disabled') {
                      errorMessage = 'Your account has been disabled.';
-                } else if (error.code === 'auth/action-code-expired') { // Explicitly handle expired code
+                } else if (error.code === 'auth/action-code-expired') { 
                      errorMessage = 'The password reset link has expired. Please use the "Forgot Password/Resend Email Verification Link?" link on the login form to request a new one.';
                 }
 
 
                 displayGlobalNotification(errorMessage, 'error', () => {
-                    if (invalidVerificationLinkModal) invalidVerificationLinkModal.style.display = 'flex'; // Redirect to resend form
+                    if (invalidVerificationLinkModal) invalidVerificationLinkModal.style.display = 'flex'; 
                     const resendEmailInputRef = document.getElementById('resendEmailInput');
-                    if(resendEmailInputRef && oobCodeEmail) resendEmailInputRef.value = oobCodeEmail; // Pre-fill email
-                    currentOobCode = null; // Clear oobCode as it's invalid/expired
-                    oobCodeEmail = null; // Clear email
-                    clearAllMessages(); // Clear messages after redirection
+                    if(resendEmailInputRef && oobCodeEmail) resendEmailInputRef.value = oobCodeEmail; 
+                    currentOobCode = null; 
+                    oobCodeEmail = null; 
+                    clearAllMessages(); 
                 }
             );
             }
@@ -885,7 +889,7 @@ const handleOobCode = async () => {
 };
 
 // Resend Verification Link / Forgot Password button handler (now handles both)
-if (resendVerificationButton) { // Added check
+if (resendVerificationButton) { 
     resendVerificationButton.onclick = async () => {
         clearAllMessages(); 
         const emailToResend = resendEmailInput?.value;
@@ -895,12 +899,11 @@ if (resendVerificationButton) { // Added check
         }
 
         try {
-            // Use sendPasswordResetEmail which can also trigger a new verification link for unverified users
             await sendPasswordResetEmail(auth, emailToResend);
             if (resendEmailInput) resendEmailInput.value = ''; 
 
             displayGlobalNotification(
-                'If an account with that email exists, a verification/password reset link has been sent to your email. Please check your inbox (and spam folder).', // More generic message for security
+                'If an account with that email exists, a verification/password reset link has been sent to your email. Please check your inbox (and spam folder).', 
                 'success',
                 () => { 
                     if (invalidVerificationLinkModal) invalidVerificationLinkModal.style.display = 'none'; 
@@ -911,29 +914,22 @@ if (resendVerificationButton) { // Added check
 
         } catch (resendError) {
             console.error("Error sending verification/reset link:", resendError);
-            // NEW LOG: Log the specific error code here
             console.error("Firebase error code for resend link attempt:", resendError.code);
 
             let resendErrorMessage = "Failed to send link. Please check the email format or try again.";
-            // Firebase sendPasswordResetEmail is intentionally vague on user-not-found to prevent email enumeration.
-            // So, we'll keep the success message generic even on some errors, or provide a specific error only if it's not 'user-not-found'.
             if (resendError.code === 'auth/invalid-email') {
                 resendErrorMessage = 'Please enter a valid email address.';
             } else if (resendError.code === 'auth/user-disabled') {
                 resendErrorMessage = 'This account has been disabled.';
-            } else if (resendError.code === 'auth/network-request-failed') { // Added specific network error handling
+            } else if (resendError.code === 'auth/network-request-failed') { 
                 resendErrorMessage = 'Network error. Please check your internet connection and try again.';
-            } else if (resendError.code === 'auth/too-many-requests') { // Added specific handling for too-many-requests
+            } else if (resendError.code === 'auth/too-many-requests') { 
                 resendErrorMessage = 'Too many requests for this email. Please wait a few minutes before trying again.';
             } else {
-                // For other errors, still show a generic error but log full details
                 console.error("Unhandled resend error code:", resendError.code);
             }
             
-            // Changed from displayModalMessage to displayGlobalNotification
             displayGlobalNotification(resendErrorMessage, 'error', () => {
-                // Keep the invalidVerificationLinkModal open so the user can retry
-                // Just clear the global notification
                 clearAllMessages(); 
             });
         }
@@ -948,15 +944,55 @@ window.onload = handleOobCode;
 
 
 // Handle Firebase Auth state changes (useful for persistent login)
+// This is mainly for initial page load check for the login status.
+// Redirection logic is primarily handled in the loginForm submission now.
 onAuthStateChanged(auth, async (user) => { 
     if (user) {
-        // User is signed in. This block is for persistent login state handling.
-        // For the current flow, initial redirects happen after explicit login attempts
-        // in loginForm/emailVerificationLoginForm.
-        // This is primarily for maintaining session if page refreshes or for initial load.
-        // Example: If a user refreshes an approved page, you might want to re-check their status here.
-        // For now, we'll keep the modals as the primary entry point.
+        // User is signed in.
+        // For simplicity, if a logged-in user somehow lands on the root (index.html),
+        // and they are already 'Access Granted', redirect them based on their role
+        // unless they are on an oobCode link.
+        const urlParams = new URLSearchParams(window.location.search);
+        const mode = urlParams.get('mode');
+
+        if (!mode && (window.location.pathname.endsWith('/') || window.location.pathname.endsWith('index.html'))) {
+            try {
+                const userData = await getUserProfile(user.uid);
+                if (userData && userData.accountStatus === 'Access Granted') {
+                    // Fetch ID token results to check for admin claim
+                    const idTokenResult = await user.getIdTokenResult();
+                    const userRole = userData.role;
+                    const isAdmin = idTokenResult.claims.admin === true;
+
+                    // If user is a normal driver/passenger, redirect directly
+                    if (userRole === 'driver' && !isAdmin && userRole !== 'hybrid') { // Added !isAdmin and !hybrid to condition
+                        window.location.href = 'driverdashboard.html';
+                    } else if (userRole === 'passenger' && !isAdmin && userRole !== 'hybrid') { // Added !isAdmin and !hybrid to condition
+                        window.location.href = 'passengerdashboard.html';
+                    } else {
+                        // For hybrid or admin users, show the role selection modal
+                        const availableRoles = [];
+                        if (userRole === 'driver' || userRole === 'hybrid') {
+                            availableRoles.push('driver');
+                        }
+                        if (userRole === 'passenger' || userRole === 'hybrid') {
+                            availableRoles.push('passenger');
+                        }
+                        if (isAdmin) {
+                            availableRoles.push('admin');
+                        }
+                        populateRoleSelectionModal(availableRoles);
+                        if (roleSelectionModal) roleSelectionModal.style.display = 'flex';
+                    }
+                }
+            } catch (error) {
+                console.error("Error in onAuthStateChanged for index.html:", error);
+                // Optionally display a notification or log out
+            }
+        }
     } else {
-        // User is signed out.
+        // User is signed out. Do nothing if they are on index.html.
+        // Redirection for admin_dashboard.html will be handled by admin_script.js
+        // and other modals already handle their own redirects if needed.
     }
 });
