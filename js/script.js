@@ -19,8 +19,8 @@ import {
     updateUserAccountStatus // NEW: Import for updating user status
 } from './auth.js'; 
 
-// Removed redundant Firestore direct imports as we'll use functions from auth.js where applicable
-// import { collection, doc, setDoc, updateDoc, getDoc, query, where, getDocs } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
+// NEW: Explicitly import doc and setDoc from firestore for direct use in script.js
+import { doc, setDoc } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
 
 
 // Get elements
@@ -322,7 +322,7 @@ if (signupForm) { // Added check
         const confirmPassword = signupConfirmPassword?.value;
 
         // Basic check for required fields, though HTML `required` helps
-        if (!firstName || !lastName || !gender || !mobile || !email || !role || !city || !password || !confirmPassword) {
+        if (!firstName || !lastName || !gender || !mobile || !email || !role || !city || !password || !confirmPassword) { // Changed !!confirmPassword to !confirmPassword
             displayModalMessage(signupMessage, 'Please fill in all required fields.', 'error');
             return;
         }
@@ -345,7 +345,8 @@ if (signupForm) { // Added check
             await sendVerificationEmail(user);
 
             // Store user data in Firestore with initial status
-            await setDoc(doc(db, 'users', user.uid), { // Use db directly, no need for collection(db, 'users') here
+            // setDoc is now imported at the top
+            await setDoc(doc(db, 'users', user.uid), { 
                 firstName: firstName,
                 lastName: lastName,
                 gender: gender,
@@ -480,14 +481,14 @@ if (resetPasswordForm) { // Added check
         clearAllMessages(); 
 
         const newPass = newPassword?.value;
-        const confirmNewPass = confirmNewPassword?.value;
+        const confirmedNewPasswordValue = confirmNewPassword?.value; // Renamed variable here
 
-        if (!newPass || !confirmNewPass) {
+        if (!newPass || !confirmedNewPasswordValue) { // Used renamed variable here
              displayModalMessage(resetPasswordMessage, 'Please enter and confirm your new password.', 'error');
              return;
         }
 
-        if (newPass !== confirmNewPass) {
+        if (newPass !== confirmedNewPasswordValue) { // Used renamed variable here
             displayModalMessage(resetPasswordMessage, 'Passwords do not match.', 'error');
             return;
         }
