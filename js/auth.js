@@ -1,7 +1,8 @@
 // js/auth.js
 
 // Import the necessary functions from the Firebase SDKs using modular syntax
-import { initializeApp } from "[https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js](https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js)";
+// IMPORTANT: Corrected the module specifier URLs to be clean strings.
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
 import { 
     getAuth, 
     sendEmailVerification, 
@@ -10,17 +11,17 @@ import {
     applyActionCode, 
     confirmPasswordReset,
     createUserWithEmailAndPassword, 
-    signInWithEmailAndPassword, 
-    signOut, 
+    signInWithEmailAndPassword,   
+    signOut,                      
     onAuthStateChanged 
-} from "[https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js](https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js)"; 
-import { getFirestore, collection, doc, setDoc, updateDoc, getDoc, query, where, getDocs, serverTimestamp } from "[https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js](https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js)";
+} from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js"; 
+import { getFirestore, collection, doc, setDoc, updateDoc, getDoc, query, where, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
 
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
     apiKey: "AIzaSyDuRG37e5qWu1kN7aZQVBwyQwj1EbIieHE",
     authDomain: "wcsharearideinitiativeproject.firebaseapp.com",
-    databaseURL: "[https://wcsharearideinitiativeproject-default-rtdb.asia-southeast1.firebasedatabase.app](https://wcsharearideinitiativeproject-default-rtdb.asia-southeast1.firebasedatabase.app)",
+    databaseURL: "https://wcsharearideinitiativeproject-default-rtdb.asia-southeast1.firebasedatabase.app",
     projectId: "wcsharearideinitiativeproject",
     storageBucket: "wcsharearideinitiativeproject.firebasestorage.app",
     messagingSenderId: "169826993800",
@@ -46,7 +47,7 @@ const sendVerificationEmail = async (user) => {
         // Go to Firebase Console -> Authentication -> Templates -> Email address verification
         // Ensure the domain 'joshuaplaciego.github.io' is authorized for your project.
         const actionCodeSettings = {
-            url: '[https://joshuaplaciego.github.io/wisdomchurchsharearideinitiativeproject/](https://joshuaplaciego.github.io/wisdomchurchsharearideinitiativeproject/)', // Your web app's public URL
+            url: 'https://joshuaplaciego.github.io/wisdomchurchsharearideinitiativeproject/', // Your web app's public URL
             handleCodeInApp: true, // This is crucial for returning to your app
         };
         await sendEmailVerification(user, actionCodeSettings); // Use modular sendEmailVerification
