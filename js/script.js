@@ -771,7 +771,7 @@ const handleOobCode = async () => {
                 // Redirect user to the Email Verification Login Form with a success message.
                 history.replaceState({}, document.title, window.location.pathname); // Clean URL
                 displayGlobalNotification(
-                    'Your email has been successfully verified! Please log in to the Email Verification Form to complete account activation.', 
+                    'Verification link validated! Please log in to the Email Verification Form to complete account activation.', 
                     'success', 
                     () => {
                         if (emailVerificationLoginModal) emailVerificationLoginModal.style.display = 'flex';

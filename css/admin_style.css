@@ -1,0 +1,162 @@
+/* admin_style.css */
+
+/* Admin Header specific styles */
+.admin-header {
+    background-color: #2c3e50; /* Darker blue/grey for admin header */
+    color: white;
+    padding: 1rem 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.admin-header h1 {
+    margin: 0;
+    font-size: 1.8rem;
+}
+
+.admin-header nav button {
+    background-color: #e74c3c; /* Red for logout */
+    color: white;
+    border: none;
+    padding: 0.6rem 1.2rem;
+    cursor: pointer;
+    border-radius: 5px;
+    font-size: 1rem;
+    transition: background-color 0.3s ease;
+}
+
+.admin-header nav button:hover {
+    background-color: #c0392b;
+}
+
+/* Admin Main Content area */
+.admin-main {
+    flex-grow: 1;
+    padding: 30px;
+    background-color: #ecf0f1; /* Light grey background */
+    min-height: calc(100vh - 70px); /* Adjust based on header height */
+    color: #34495e;
+}
+
+.admin-main h2 {
+    color: #2c3e50;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.admin-main p {
+    text-align: center;
+    margin-bottom: 30px;
+    line-height: 1.6;
+}
+
+/* Filter controls */
+.filter-controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 30px;
+    padding: 15px;
+    background-color: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.filter-controls label {
+    font-weight: bold;
+    color: #34495e;
+}
+
+.filter-controls select {
+    padding: 8px 12px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: #f9f9f9;
+    font-size: 1rem;
+}
+
+.filter-controls button {
+    background-color: #3498db; /* Blue for refresh */
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background-color 0.3s ease;
+}
+
+.filter-controls button:hover {
+    background-color: #2980b9;
+}
+
+/* Users Table */
+.users-table-container {
+    background-color: #ffffff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 1px 5px rgba(0,0,0,0.1);
+    overflow-x: auto; /* Enables horizontal scrolling for small screens */
+}
+
+#usersTable {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+}
+
+#usersTable th,
+#usersTable td {
+    border: 1px solid #ddd;
+    padding: 12px;
+    text-align: left;
+    vertical-align: middle;
+}
+
+#usersTable th {
+    background-color: #f2f2f2;
+    font-weight: bold;
+    color: #333;
+    white-space: nowrap; /* Prevent header text wrapping */
+}
+
+#usersTable tbody tr:nth-child(even) {
+    background-color: #f8f8f8;
+}
+
+#usersTable tbody tr:hover {
+    background-color: #e0e0e0;
+}
+
+/* Action Buttons in table */
+.action-buttons button {
+    background-color: #2ecc71; /* Green for approve */
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9em;
+    margin-right: 5px;
+    transition: background-color 0.3s ease;
+    white-space: nowrap; /* Prevent button text wrapping */
+}
+
+.action-buttons button.reject {
+    background-color: #e74c3c; /* Red for reject */
+}
+
+.action-buttons button:hover {
+    opacity: 0.9;
+}
+
+/* No users message */
+#usersTable tbody tr td[colspan="7"] {
+    text-align: center;
+    font-style: italic;
+    color: #777;
+    padding: 20px;
+}
