@@ -5,7 +5,8 @@ import {
     db, 
     signOut, 
     onAuthStateChanged,
-    serverTimestamp 
+    serverTimestamp,
+    getUserProfile // ADDED: Import getUserProfile
 } from './auth.js';
 
 // Import Firestore specific functions
