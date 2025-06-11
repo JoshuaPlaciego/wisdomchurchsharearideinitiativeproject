@@ -40,6 +40,16 @@
     color: #34495e;
 }
 
+/* NEW: Admin Section for better organization */
+.admin-section {
+    background-color: #ffffff;
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 1px 5px rgba(0,0,0,0.1);
+    margin-bottom: 30px; /* Space between sections */
+}
+
+
 .admin-main h2 {
     color: #2c3e50;
     margin-bottom: 20px;
@@ -60,7 +70,7 @@
     margin-bottom: 20px;
 }
 
-/* Filter controls */
+/* Filter controls (reused for both users and rides) */
 .filter-controls {
     display: flex;
     flex-wrap: wrap; /* Allow items to wrap on smaller screens */
@@ -69,9 +79,9 @@
     gap: 15px;
     margin-bottom: 30px;
     padding: 15px;
-    background-color: #ffffff;
+    background-color: #f8f8f8; /* Slightly different background for filters */
     border-radius: 8px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05); /* Lighter shadow */
 }
 
 .filter-group {
@@ -90,7 +100,7 @@
     padding: 8px 12px;
     border: 1px solid #ccc;
     border-radius: 5px;
-    background-color: #f9f9f9;
+    background-color: #ffffff; /* White background for inputs */
     font-size: 1rem;
     min-width: 120px; /* Ensure filters have a minimum width */
 }
@@ -110,8 +120,8 @@
     background-color: #2980b9;
 }
 
-/* Users Table */
-.users-table-container {
+/* Users Table & Rides Table Containers */
+.users-table-container, .rides-table-container {
     background-color: #ffffff;
     padding: 20px;
     border-radius: 8px;
@@ -119,21 +129,24 @@
     overflow-x: auto; /* Enables horizontal scrolling for small screens */
 }
 
-#usersTable {
+#usersTable, #ridesTable {
     width: 100%;
     border-collapse: collapse;
     margin-top: 15px;
 }
 
 #usersTable th,
-#usersTable td {
+#usersTable td,
+#ridesTable th,
+#ridesTable td {
     border: 1px solid #ddd;
     padding: 12px;
     text-align: left;
     vertical-align: middle;
 }
 
-#usersTable th {
+#usersTable th,
+#ridesTable th {
     background-color: #f2f2f2;
     font-weight: bold;
     color: #333;
@@ -143,9 +156,11 @@
     padding-right: 25px; /* Make space for arrow */
 }
 
-/* Sort indicators for table headers */
+/* Sort indicators for table headers (reused) */
 #usersTable th.sort-asc::after,
-#usersTable th.sort-desc::after {
+#usersTable th.sort-desc::after,
+#ridesTable th.sort-asc::after,
+#ridesTable th.sort-desc::after {
     content: '';
     position: absolute;
     right: 8px;
@@ -157,24 +172,28 @@
     border-right: 5px solid transparent;
 }
 
-#usersTable th.sort-asc::after {
+#usersTable th.sort-asc::after,
+#ridesTable th.sort-asc::after {
     border-bottom: 5px solid #333; /* Up arrow */
 }
 
-#usersTable th.sort-desc::after {
+#usersTable th.sort-desc::after,
+#ridesTable th.sort-desc::after {
     border-top: 5px solid #333; /* Down arrow */
 }
 
 
-#usersTable tbody tr:nth-child(even) {
+#usersTable tbody tr:nth-child(even),
+#ridesTable tbody tr:nth-child(even) {
     background-color: #f8f8f8;
 }
 
-#usersTable tbody tr:hover {
+#usersTable tbody tr:hover,
+#ridesTable tbody tr:hover {
     background-color: #e0e0e0;
 }
 
-/* Action Buttons in table */
+/* Action Buttons in table (reused) */
 .action-buttons button {
     background-color: #2ecc71; /* Green for approve */
     color: white;
@@ -189,10 +208,9 @@
 }
 
 .action-buttons button.reject {
-    background-color: #e74c3c; /* Red for reject */
+    background-color: #e74c3c; /* Red for reject/cancel */
 }
 
-/* NEW: Styles for Suspend and Activate Buttons */
 .action-buttons button.suspend {
     background-color: #f39c12; /* Orange for suspend */
 }
@@ -201,7 +219,7 @@
 }
 
 .action-buttons button.activate {
-    background-color: #3498db; /* Blue for activate */
+    background-color: #3498db; /* Blue for activate/relist */
 }
 .action-buttons button.activate:hover {
     background-color: #2980b9;
@@ -212,8 +230,9 @@
     opacity: 0.9;
 }
 
-/* No users message */
-#usersTable tbody tr td[colspan="9"] { /* Updated colspan to 9 */
+/* No data message (reused) */
+#usersTable tbody tr td[colspan="9"],
+#ridesTable tbody tr td[colspan="12"] { /* Updated colspan for rides table */
     text-align: center;
     font-style: italic;
     color: #777;
@@ -241,16 +260,15 @@
     box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
 }
 
-/* Styles for the Custom Confirmation Modal */
-/* Reusing .modal and .modal-content from style.css */
+/* Styles for the Custom Confirmation Modal (reused) */
 #confirmationModal .modal-content {
-    max-width: 400px; /* Smaller for confirmation */
-    padding: 20px; /* Add some padding to the content area */
+    max-width: 400px; 
+    padding: 20px; 
 }
 
 #confirmationModal .modal-header-fixed {
-    padding: 10px 0; /* Adjust padding for smaller header */
-    border-bottom: none; /* No border for simple confirmation */
+    padding: 10px 0; 
+    border-bottom: none; 
 }
 
 #confirmationModal h2 {
@@ -271,14 +289,14 @@
 #confirmationModal .button-group {
     display: flex;
     justify-content: center;
-    gap: 15px; /* Space between buttons */
+    gap: 15px; 
     margin-top: 20px;
 }
 
 #confirmationModal .confirm-button,
 #confirmationModal .cancel-button {
-    flex: 1; /* Make buttons take equal width */
-    max-width: 120px; /* Limit button width */
+    flex: 1; 
+    max-width: 120px; 
     padding: 10px 15px;
     border: none;
     border-radius: 5px;
@@ -288,7 +306,7 @@
 }
 
 #confirmationModal .confirm-button {
-    background-color: #28a745; /* Green for confirm */
+    background-color: #28a745; 
     color: white;
 }
 
@@ -297,7 +315,7 @@
 }
 
 #confirmationModal .cancel-button {
-    background-color: #6c757d; /* Grey for cancel */
+    background-color: #6c757d; 
     color: white;
 }
 
@@ -305,16 +323,16 @@
     background-color: #5a6268;
 }
 
-/* NEW: Styles for User Detail Modal */
+/* Styles for User Detail Modal (reused) */
 #userDetailModal .modal-content {
-    max-width: 600px; /* Wider for more details */
+    max-width: 600px; 
     padding: 20px;
 }
 
 #userDetailModal .user-details-grid {
     display: grid;
-    grid-template-columns: auto 1fr; /* Label and value columns */
-    gap: 10px 15px; /* Row and column gap */
+    grid-template-columns: auto 1fr; 
+    gap: 10px 15px; 
     padding-top: 10px;
     font-size: 1.05em;
     line-height: 1.4;
@@ -331,7 +349,7 @@
 
 #userDetailModal .user-details-grid span,
 #userDetailModal .user-details-grid a {
-    word-break: break-all; /* Break long text like emails/links */
+    word-break: break-all; 
 }
 
 #userDetailModal .user-details-grid a {
@@ -344,7 +362,7 @@
 }
 
 #userDetailModal .user-detail-actions {
-    grid-column: 1 / -1; /* Span across both columns */
+    grid-column: 1 / -1; 
     display: flex;
     justify-content: center;
     gap: 15px;
@@ -364,30 +382,31 @@
 }
 
 #userDetailModal .user-detail-actions .suspend-button {
-    background-color: #f39c12; /* Orange */
+    background-color: #f39c12; 
 }
 #userDetailModal .user-detail-actions .suspend-button:hover {
     background-color: #e67e22;
 }
 
 #userDetailModal .user-detail-actions .approve-button {
-    background-color: #2ecc71; /* Green */
+    background-color: #2ecc71; 
 }
 #userDetailModal .user-detail-actions .approve-button:hover {
     background-color: #27ae60;
 }
 
-/* NEW: Pagination Controls Styles */
+/* Pagination Controls Styles (reused) */
 .pagination-controls {
     display: flex;
+    flex-wrap: wrap; /* Allow wrapping for responsiveness */
     justify-content: center;
     align-items: center;
     gap: 15px;
     margin-top: 25px;
     padding: 15px;
-    background-color: #ffffff;
+    background-color: #f8f8f8; /* Light background for pagination */
     border-radius: 8px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
 }
 
 .pagination-controls button {
@@ -410,10 +429,11 @@
     background-color: #2980b9;
 }
 
-.pagination-controls #pageInfo {
+.pagination-controls #pageInfo,
+.pagination-controls #ridePageInfo { /* Added ridePageInfo */
     font-weight: bold;
     color: #34495e;
-    min-width: 120px; /* Ensure space for text */
+    min-width: 120px; 
     text-align: center;
 }
 
@@ -429,7 +449,7 @@
     padding: 5px 8px;
     border: 1px solid #ccc;
     border-radius: 4px;
-    background-color: #f9f9f9;
+    background-color: #ffffff;
     font-size: 0.9em;
 }
 
@@ -457,6 +477,7 @@
     }
     .pagination-controls button,
     .pagination-controls #pageInfo,
+    .pagination-controls #ridePageInfo,
     .pagination-controls .items-per-page {
         width: 100%;
         text-align: center;
