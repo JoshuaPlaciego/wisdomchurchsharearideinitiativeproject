@@ -17,7 +17,8 @@ import {
     where, 
     doc, 
     updateDoc,
-    onSnapshot 
+    onSnapshot,
+    addDoc // NEW: for adding announcements
 } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
 
 // Import global notification functions and populateRoleSelector from dashboard_roles.js
@@ -92,7 +93,7 @@ const bookedRidersCountInfo = document.getElementById('bookedRidersCountInfo');
 const bookedRidersTableBody = document.querySelector('#bookedRidersTable tbody');
 const noBookedRidersMessage = document.getElementById('noBookedRidersMessage');
 
-// NEW: Passenger Ride History Modal Elements
+// Passenger Ride History Modal Elements
 const passengerRidesModal = document.getElementById('passengerRidesModal');
 const passengerHistoryEmail = document.getElementById('passengerHistoryEmail');
 const passengerRidesTableBody = document.querySelector('#passengerRidesTable tbody');
@@ -108,6 +109,30 @@ let currentRidePage = 1;
 let rideItemsPerPage = parseInt(ridesPerPageSelect.value, 10);
 
 let unsubscribeRidesSnapshot = null;
+
+// --- NEW: Analytics & Statistics Elements ---
+const analyticsStartDate = document.getElementById('analyticsStartDate');
+const analyticsEndDate = document.getElementById('analyticsEndDate');
+const applyAnalyticsFilterButton = document.getElementById('applyAnalyticsFilterButton');
+
+const userSignupsChartCanvas = document.getElementById('userSignupsChart');
+const ridesStatusChartCanvas = document.getElementById('ridesStatusChart');
+const ridesOfferedCompletedChartCanvas = document.getElementById('ridesOfferedCompletedChart');
+const popularRoutesChartCanvas = document.getElementById('popularRoutesChart');
+
+let userSignupsChartInstance = null;
+let ridesStatusChartInstance = null;
+let ridesOfferedCompletedChartInstance = null;
+let popularRoutesChartInstance = null;
+
+// --- NEW: Notifications & Alerts Configuration Elements ---
+const notificationAudience = document.getElementById('notificationAudience');
+const notificationTitle = document.getElementById('notificationTitle');
+const notificationMessage = document.getElementById('notificationMessage');
+const sendAnnouncementButton = document.getElementById('sendAnnouncementButton');
+const announcementLogTableBody = document.querySelector('#announcementLogTable tbody');
+
+let unsubscribeAnnouncementsSnapshot = null;
 
 
 // --- General Modal Close Buttons ---
@@ -131,6 +156,10 @@ if (adminLogoutButton) {
             if (unsubscribeRidesSnapshot) {
                 unsubscribeRidesSnapshot();
                 unsubscribeRidesSnapshot = null;
+            }
+            if (unsubscribeAnnouncementsSnapshot) { // NEW: Unsubscribe announcements
+                unsubscribeAnnouncementsSnapshot();
+                unsubscribeAnnouncementsSnapshot = null;
             }
             sessionStorage.removeItem('currentUserRole');
             sessionStorage.removeItem('isAdmin');
@@ -161,6 +190,7 @@ async function fetchAllUsers() {
         });
         currentUserPage = 1; 
         applyUserFiltersAndSort(); 
+        updateAnalyticsCharts(); // NEW: Refresh analytics charts after user data is fetched
     } catch (error) {
         console.error("Error fetching users:", error);
         usersTableBody.innerHTML = '<tr><td colspan="9" class="error-message">Error loading users. Please try again.</td></tr>'; 
@@ -285,7 +315,6 @@ function renderUsers(users) {
             actionsCell.appendChild(activateButton);
         }
 
-        // NEW: Add "View Rides" button for each user
         const viewRidesButton = document.createElement('button');
         viewRidesButton.textContent = 'View Rides';
         viewRidesButton.className = 'view-rides'; 
@@ -596,6 +625,7 @@ async function setupRidesLiveMonitoring() {
             });
             currentRidePage = 1; 
             applyRideFiltersAndSort();
+            updateAnalyticsCharts(); // NEW: Refresh analytics charts after ride data is fetched
         }, (error) => {
             console.error("Error setting up live rides monitoring:", error);
             ridesTableBody.innerHTML = '<tr><td colspan="12" class="error-message">Error loading rides. Live monitoring failed.</td></tr>'; 
@@ -783,12 +813,12 @@ async function openBookedRidersModal(rideId, passengerEmails) {
 }
 
 /**
- * NEW: Opens the modal to display the ride history for a specific passenger.
+ * Opens the modal to display the ride history for a specific passenger.
  * @param {string} passengerEmail - The email of the passenger whose ride history to display.
  */
 async function openPassengerRidesModal(passengerEmail) {
     clearAllMessages();
-    passengerRidesTableBody.innerHTML = ''; // Clear previous data
+    passengerRidesTableBody.innerHTML = ''; 
     passengerHistoryEmail.textContent = passengerEmail;
     noPassengerRidesMessage.style.display = 'none';
 
@@ -1000,6 +1030,428 @@ function updateRidePaginationControls(totalItems, totalPages) {
 }
 
 
+// --- NEW: Analytics & Statistics Functions ---
+
+// Function to process data and render charts
+function updateAnalyticsCharts() {
+    const startDate = analyticsStartDate.value ? new Date(analyticsStartDate.value) : null;
+    const endDate = analyticsEndDate.value ? new Date(analyticsEndDate.value) : null;
+
+    // Filter data based on date range
+    const filteredUsers = allUsers.filter(user => {
+        if (!user.createdAt || !user.createdAt.toDate) return false;
+        const userDate = user.createdAt.toDate();
+        // Ensure date comparison accounts for end of day for endDate
+        const isAfterStart = !startDate || userDate >= startDate;
+        const isBeforeEnd = !endDate || userDate <= new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate(), 23, 59, 59, 999);
+        return isAfterStart && isBeforeEnd;
+    });
+
+    const filteredRides = allRides.filter(ride => {
+        if (!ride.createdAt || !ride.createdAt.toDate) return false;
+        const rideDate = ride.createdAt.toDate();
+        // Ensure date comparison accounts for end of day for endDate
+        const isAfterStart = !startDate || rideDate >= startDate;
+        const isBeforeEnd = !endDate || rideDate <= new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate(), 23, 59, 59, 999);
+        return isAfterStart && isBeforeEnd;
+    });
+
+    renderUserSignupsChart(filteredUsers);
+    renderRidesStatusChart(filteredRides);
+    renderRidesOfferedCompletedChart(filteredRides);
+    renderPopularRoutesChart(filteredRides);
+}
+
+/**
+ * Renders the New User Sign-ups chart.
+ * @param {Array<Object>} users - Filtered user data.
+ */
+function renderUserSignupsChart(users) {
+    if (!userSignupsChartCanvas) return;
+
+    // Aggregate data by day within the selected range
+    const signupsByDate = {};
+    users.forEach(user => {
+        if (user.createdAt && user.createdAt.toDate) {
+            const date = user.createdAt.toDate();
+            const dateKey = date.toISOString().split('T')[0]; //YYYY-MM-DD
+            signupsByDate[dateKey] = (signupsByDate[dateKey] || 0) + 1;
+        }
+    });
+
+    const sortedDates = Object.keys(signupsByDate).sort();
+    const signupCounts = sortedDates.map(date => signupsByDate[date]);
+
+    if (userSignupsChartInstance) {
+        userSignupsChartInstance.destroy();
+    }
+
+    userSignupsChartInstance = new Chart(userSignupsChartCanvas, {
+        type: 'line',
+        data: {
+            labels: sortedDates,
+            datasets: [{
+                label: 'New User Sign-ups',
+                data: signupCounts,
+                borderColor: '#4299e1', // Techy blue
+                backgroundColor: 'rgba(66, 153, 225, 0.2)',
+                tension: 0.3,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    labels: {
+                        color: '#e2e8f0' // Light text for legend
+                    }
+                },
+                title: {
+                    display: false,
+                    text: 'New User Sign-ups',
+                    color: '#e2e8f0'
+                }
+            },
+            scales: {
+                x: {
+                    grid: {
+                        color: '#4a5568' // Darker grid lines
+                    },
+                    ticks: {
+                        color: '#a0aec0' // Muted text for ticks
+                    }
+                },
+                y: {
+                    beginAtZero: true,
+                    grid: {
+                        color: '#4a5568'
+                    },
+                    ticks: {
+                        color: '#a0aec0'
+                    }
+                }
+            }
+        }
+    });
+}
+
+/**
+ * Renders the Rides Status Distribution chart.
+ * @param {Array<Object>} rides - Filtered ride data.
+ */
+function renderRidesStatusChart(rides) {
+    if (!ridesStatusChartCanvas) return;
+
+    const statusCounts = {};
+    rides.forEach(ride => {
+        const status = ride.status || 'Unknown';
+        statusCounts[status] = (statusCounts[status] || 0) + 1;
+    });
+
+    const labels = Object.keys(statusCounts);
+    const data = Object.values(statusCounts);
+
+    const colors = ['#48bb78', '#f6ad55', '#4299e1', '#ef4444', '#718096']; // Green, Orange, Blue, Red, Grey
+
+    if (ridesStatusChartInstance) {
+        ridesStatusChartInstance.destroy();
+    }
+
+    ridesStatusChartInstance = new Chart(ridesStatusChartCanvas, {
+        type: 'doughnut',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Rides Status',
+                data: data,
+                backgroundColor: colors.slice(0, labels.length),
+                borderColor: '#1a202c', // Border to match background
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'right',
+                    labels: {
+                        color: '#e2e8f0'
+                    }
+                },
+                title: {
+                    display: false,
+                    text: 'Rides Status Distribution',
+                    color: '#e2e8f0'
+                }
+            }
+        }
+    });
+}
+
+/**
+ * Renders the Rides Offered vs. Completed chart.
+ * @param {Array<Object>} rides - Filtered ride data.
+ */
+function renderRidesOfferedCompletedChart(rides) {
+    if (!ridesOfferedCompletedChartCanvas) return;
+
+    const offeredByDate = {};
+    const completedByDate = {};
+
+    rides.forEach(ride => {
+        if (ride.createdAt && ride.createdAt.toDate) {
+            const date = ride.createdAt.toDate();
+            const dateKey = date.toISOString().split('T')[0]; //YYYY-MM-DD
+
+            if (ride.status === 'Offered') {
+                offeredByDate[dateKey] = (offeredByDate[dateKey] || 0) + 1;
+            } else if (ride.status === 'Completed') {
+                completedByDate[dateKey] = (completedByDate[dateKey] || 0) + 1;
+            }
+        }
+    });
+
+    const allDates = [...new Set([...Object.keys(offeredByDate), ...Object.keys(completedByDate)])].sort();
+    const offeredCounts = allDates.map(date => offeredByDate[date] || 0);
+    const completedCounts = allDates.map(date => completedByDate[date] || 0);
+
+    if (ridesOfferedCompletedChartInstance) {
+        ridesOfferedCompletedChartInstance.destroy();
+    }
+
+    ridesOfferedCompletedChartInstance = new Chart(ridesOfferedCompletedChartCanvas, {
+        type: 'bar',
+        data: {
+            labels: allDates,
+            datasets: [
+                {
+                    label: 'Rides Offered',
+                    data: offeredCounts,
+                    backgroundColor: '#4299e1', // Techy blue
+                    borderColor: '#4299e1',
+                    borderWidth: 1
+                },
+                {
+                    label: 'Rides Completed',
+                    data: completedCounts,
+                    backgroundColor: '#48bb78', // Green
+                    borderColor: '#48bb78',
+                    borderWidth: 1
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    labels: {
+                        color: '#e2e8f0'
+                    }
+                },
+                title: {
+                    display: false,
+                    text: 'Rides Offered vs. Completed',
+                    color: '#e2e8f0'
+                }
+            },
+            scales: {
+                x: {
+                    stacked: true,
+                    grid: {
+                        color: '#4a5568'
+                    },
+                    ticks: {
+                        color: '#a0aec0'
+                    }
+                },
+                y: {
+                    stacked: true,
+                    beginAtZero: true,
+                    grid: {
+                        color: '#4a5568'
+                    },
+                    ticks: {
+                        color: '#a0aec0'
+                    }
+                }
+            }
+        }
+    });
+}
+
+/**
+ * Renders the Top 5 Most Popular Routes chart.
+ * @param {Array<Object>} rides - Filtered ride data.
+ */
+function renderPopularRoutesChart(rides) {
+    if (!popularRoutesChartCanvas) return;
+
+    const routeCounts = {};
+    rides.forEach(ride => {
+        const route = `${ride.startLocation} to ${ride.endLocation}`;
+        routeCounts[route] = (routeCounts[route] || 0) + 1;
+    });
+
+    const sortedRoutes = Object.entries(routeCounts)
+        .sort(([, a], [, b]) => b - a)
+        .slice(0, 5); // Get top 5
+
+    const labels = sortedRoutes.map(([route]) => route);
+    const data = sortedRoutes.map(([, count]) => count);
+
+    if (popularRoutesChartInstance) {
+        popularRoutesChartInstance.destroy();
+    }
+
+    popularRoutesChartInstance = new Chart(popularRoutesChartCanvas, {
+        type: 'horizontalBar', // Use horizontal bar for better readability of long labels
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Number of Rides',
+                data: data,
+                backgroundColor: '#f6ad55', // Orange
+                borderColor: '#f6ad55',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            indexAxis: 'y', // This makes it a horizontal bar chart
+            plugins: {
+                legend: {
+                    display: false // No legend needed for single dataset
+                },
+                title: {
+                    display: false,
+                    text: 'Top 5 Most Popular Routes',
+                    color: '#e2e8f0'
+                }
+            },
+            scales: {
+                x: {
+                    beginAtZero: true,
+                    grid: {
+                        color: '#4a5568'
+                    },
+                    ticks: {
+                        color: '#a0aec0'
+                    }
+                },
+                y: {
+                    grid: {
+                        color: '#4a5568'
+                    },
+                    ticks: {
+                        color: '#a0aec0'
+                    }
+                }
+            }
+        }
+    });
+}
+
+// Event listener for analytics date range filter
+if (applyAnalyticsFilterButton) {
+    applyAnalyticsFilterButton.addEventListener('click', updateAnalyticsCharts);
+}
+
+
+// --- NEW: Notifications & Alerts Configuration Functions ---
+
+/**
+ * Sets up a real-time listener for in-app announcements from Firestore.
+ */
+async function setupAnnouncementsLiveMonitoring() {
+    announcementLogTableBody.innerHTML = '<tr><td colspan="4">Loading announcements...</td></tr>';
+    try {
+        const announcementsRef = collection(db, 'announcements');
+        const q = query(announcementsRef);
+
+        if (unsubscribeAnnouncementsSnapshot) {
+            unsubscribeAnnouncementsSnapshot();
+            unsubscribeAnnouncementsSnapshot = null;
+        }
+
+        unsubscribeAnnouncementsSnapshot = onSnapshot(q, (querySnapshot) => {
+            renderAnnouncementsLog(querySnapshot.docs);
+        }, (error) => {
+            console.error("Error setting up live announcements monitoring:", error);
+            announcementLogTableBody.innerHTML = '<tr><td colspan="4" class="error-message">Error loading announcements. Live monitoring failed.</td></tr>';
+            displayGlobalNotification('Failed to set up live announcements monitoring: ' + error.message, 'error');
+        });
+        displayGlobalNotification('Live monitoring for announcements established!', 'info');
+
+    } catch (error) {
+        console.error("Error initiating live announcements monitoring setup:", error);
+        announcementLogTableBody.innerHTML = '<tr><td colspan="4" class="error-message">Error initializing announcements monitoring.</td></tr>';
+        displayGlobalNotification('Error initializing announcements monitoring: ' + error.message, 'error');
+    }
+}
+
+/**
+ * Renders the recent announcements log table.
+ * @param {Array<Object>} docs - Array of Firestore document snapshots for announcements.
+ */
+function renderAnnouncementsLog(docs) {
+    announcementLogTableBody.innerHTML = '';
+    if (docs.length === 0) {
+        announcementLogTableBody.innerHTML = '<tr><td colspan="4">No recent announcements.</td></tr>';
+        return;
+    }
+
+    docs.sort((a, b) => b.data().timestamp.toMillis() - a.data().timestamp.toMillis()); // Sort by most recent first
+
+    docs.forEach(docSnap => {
+        const data = docSnap.data();
+        const row = announcementLogTableBody.insertRow();
+        row.insertCell().textContent = data.timestamp && data.timestamp.toDate ? data.timestamp.toDate().toLocaleString() : 'N/A';
+        row.insertCell().textContent = data.audience || 'N/A';
+        row.insertCell().textContent = data.title || 'N/A';
+        row.insertCell().textContent = data.message || 'N/A';
+    });
+}
+
+
+// Event listener for sending new announcements
+if (sendAnnouncementButton) {
+    sendAnnouncementButton.addEventListener('click', async () => {
+        clearAllMessages();
+        const audience = notificationAudience.value;
+        const title = notificationTitle.value.trim();
+        const message = notificationMessage.value.trim();
+
+        if (!title || !message) {
+            displayGlobalNotification('Please enter both a title and a message for the announcement.', 'error');
+            return;
+        }
+
+        try {
+            // Store announcement in Firestore (accessible by other users for in-app display)
+            await addDoc(collection(db, 'announcements'), {
+                audience: audience,
+                title: title,
+                message: message,
+                timestamp: serverTimestamp()
+            });
+
+            displayGlobalNotification('Announcement sent successfully (in-app)!', 'success');
+            notificationTitle.value = '';
+            notificationMessage.value = '';
+            notificationAudience.value = 'all'; // Reset to default
+        } catch (error) {
+            console.error("Error sending announcement:", error);
+            displayGlobalNotification('Failed to send announcement: ' + error.message, 'error');
+        }
+    });
+}
+
+
 // --- Admin Route Protection & Initialization ---
 onAuthStateChanged(auth, async (user) => {
     if (user) {
@@ -1018,6 +1470,15 @@ onAuthStateChanged(auth, async (user) => {
                     populateRoleSelector(); 
                     fetchAllUsers(); 
                     setupRidesLiveMonitoring(); 
+                    setupAnnouncementsLiveMonitoring(); // NEW: Start announcements monitoring
+                    // Set default date range for analytics to past 30 days
+                    const today = new Date();
+                    const thirtyDaysAgo = new Date(today);
+                    thirtyDaysAgo.setDate(today.getDate() - 30);
+
+                    analyticsEndDate.value = today.toISOString().split('T')[0];
+                    analyticsStartDate.value = thirtyDaysAgo.toISOString().split('T')[0];
+                    updateAnalyticsCharts(); // Initial chart render
                 }
 
             } else {

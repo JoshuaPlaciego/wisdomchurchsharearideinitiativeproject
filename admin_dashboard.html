@@ -8,6 +8,8 @@
     <link rel="stylesheet" href="css/style.css">
     <!-- Link to the new admin specific CSS -->
     <link rel="stylesheet" href="css/admin_style.css">
+    <!-- Chart.js for analytics -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
     <!-- Global Notification Message Box (reused from index.html) -->
@@ -85,7 +87,7 @@
         </div>
     </div>
 
-    <!-- NEW: Passenger Ride History Modal -->
+    <!-- Passenger Ride History Modal -->
     <div id="passengerRidesModal" class="modal">
         <div class="modal-content">
             <span class="close-button" data-modal-id="passengerRidesModal">&times;</span>
@@ -270,6 +272,89 @@
                 </div>
             </div>
         </section>
+
+        <!-- NEW: Analytics & Statistics Dashboard Section -->
+        <section class="admin-section">
+            <h2>Analytics & Statistics Dashboard</h2>
+            <p>Visualize platform usage trends and key metrics.</p>
+
+            <div class="filter-controls analytics-controls">
+                <div class="filter-group">
+                    <label for="analyticsStartDate">From:</label>
+                    <input type="date" id="analyticsStartDate">
+                </div>
+                <div class="filter-group">
+                    <label for="analyticsEndDate">To:</label>
+                    <input type="date" id="analyticsEndDate">
+                </div>
+                <button id="applyAnalyticsFilterButton">Apply Filter</button>
+            </div>
+
+            <div class="analytics-charts-container">
+                <div class="chart-card">
+                    <h3>New User Sign-ups</h3>
+                    <canvas id="userSignupsChart"></canvas>
+                </div>
+                <div class="chart-card">
+                    <h3>Rides Status Distribution</h3>
+                    <canvas id="ridesStatusChart"></canvas>
+                </div>
+                <div class="chart-card">
+                    <h3>Rides Offered vs. Completed</h3>
+                    <canvas id="ridesOfferedCompletedChart"></canvas>
+                </div>
+                <div class="chart-card">
+                    <h3>Top 5 Most Popular Routes</h3>
+                    <canvas id="popularRoutesChart"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <!-- NEW: Notifications & Alerts Configuration Section -->
+        <section class="admin-section">
+            <h2>Notifications & Alerts Configuration</h2>
+            <p>Manage in-app notification templates and send custom announcements.</p>
+
+            <div class="notification-config-container">
+                <h3>Create New In-App Announcement</h3>
+                <div class="form-group">
+                    <label for="notificationAudience">Audience:</label>
+                    <select id="notificationAudience">
+                        <option value="all">All Users</option>
+                        <option value="drivers">All Drivers</option>
+                        <option value="passengers">All Passengers</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="notificationTitle">Title:</label>
+                    <input type="text" id="notificationTitle" placeholder="e.g., Important Update!">
+                </div>
+                <div class="form-group">
+                    <label for="notificationMessage">Message:</label>
+                    <textarea id="notificationMessage" rows="5" placeholder="Enter your announcement message here..."></textarea>
+                </div>
+                <button id="sendAnnouncementButton">Send Announcement (In-App)</button>
+            </div>
+
+            <div class="notification-log-container">
+                <h3>Recent Announcements</h3>
+                <table id="announcementLogTable">
+                    <thead>
+                        <tr>
+                            <th>Timestamp</th>
+                            <th>Audience</th>
+                            <th>Title</th>
+                            <th>Message</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Recent announcements will be loaded here by JavaScript -->
+                        <tr><td colspan="4">No recent announcements.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
     </main>
 
     <!-- Import Firebase and Auth module -->

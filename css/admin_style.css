@@ -113,7 +113,8 @@
 }
 
 .filter-controls select,
-.filter-controls input[type="text"] { 
+.filter-controls input[type="text"],
+.filter-controls input[type="date"] { /* Added date input */
     padding: 10px 15px; /* More padding */
     border: 1px solid #4a5568; /* Darker border */
     border-radius: 8px; /* More rounded */
@@ -641,6 +642,155 @@
     color: #a0aec0;
 }
 
+/* NEW: Analytics & Statistics Chart Containers */
+.analytics-charts-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); /* Responsive grid */
+    gap: 30px; /* Space between charts */
+    margin-top: 30px;
+}
+
+.chart-card {
+    background-color: #202631; /* Slightly lighter dark for chart cards */
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+    border: 1px solid #4a5568;
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* Center chart title */
+}
+
+.chart-card h3 {
+    color: #e2e8f0; /* Light text for chart titles */
+    margin-bottom: 20px;
+    font-size: 1.4rem;
+    font-weight: 600;
+}
+
+.chart-card canvas {
+    max-height: 300px; /* Limit chart height */
+    width: 100% !important; /* Ensure canvas takes full width of its parent */
+    height: auto !important; /* Maintain aspect ratio */
+}
+
+/* NEW: Notifications & Alerts Configuration Styles */
+.notification-config-container {
+    background-color: #202631;
+    padding: 25px;
+    border-radius: 10px;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+    border: 1px solid #4a5568;
+    margin-bottom: 30px;
+}
+
+.notification-config-container h3 {
+    color: #e2e8f0;
+    margin-bottom: 20px;
+    font-size: 1.5rem;
+    text-align: center;
+}
+
+.notification-config-container .form-group {
+    margin-bottom: 15px;
+}
+
+.notification-config-container label {
+    display: block;
+    font-weight: bold;
+    color: #cbd5e0;
+    margin-bottom: 5px;
+}
+
+.notification-config-container select,
+.notification-config-container input[type="text"],
+.notification-config-container textarea {
+    width: 100%;
+    padding: 10px 15px;
+    border: 1px solid #4a5568;
+    border-radius: 8px;
+    background-color: #1a202c;
+    color: #e2e8f0;
+    font-size: 1rem;
+    box-sizing: border-box; /* Include padding and border in element's total width */
+}
+
+.notification-config-container textarea {
+    resize: vertical; /* Allow vertical resizing */
+    min-height: 80px;
+}
+
+.notification-config-container button {
+    width: auto; /* Auto width for specific button */
+    display: block;
+    margin: 20px auto 0 auto; /* Center button */
+    background-color: #48bb78; /* Green send button */
+    color: white;
+    border: none;
+    padding: 12px 25px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1.05rem;
+    font-weight: 600;
+    transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
+    box-shadow: 0 3px 6px rgba(0,0,0,0.3);
+}
+
+.notification-config-container button:hover {
+    background-color: #38a169;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 10px rgba(0,0,0,0.4);
+}
+
+.notification-log-container {
+    background-color: #202631;
+    padding: 25px;
+    border-radius: 10px;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+    border: 1px solid #4a5568;
+    overflow-x: auto; /* Allow horizontal scrolling for table */
+}
+
+.notification-log-container h3 {
+    color: #e2e8f0;
+    margin-bottom: 20px;
+    font-size: 1.5rem;
+    text-align: center;
+}
+
+#announcementLogTable {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    margin-top: 15px;
+    font-size: 0.9rem;
+}
+
+#announcementLogTable th,
+#announcementLogTable td {
+    border: none;
+    padding: 10px;
+    text-align: left;
+    background-color: #202631;
+    color: #cbd5e0;
+    border-bottom: 1px solid #2d3748;
+}
+
+#announcementLogTable th {
+    background-color: #2d3748;
+    font-weight: bold;
+    color: #4299e1;
+    border-bottom: 2px solid #4299e1;
+}
+#announcementLogTable thead tr th:first-child { border-top-left-radius: 8px; }
+#announcementLogTable thead tr th:last-child { border-top-right-radius: 8px; }
+#announcementLogTable tbody tr:last-child td:first-child { border-bottom-left-radius: 8px; }
+#announcementLogTable tbody tr:last-child td:last-child { border-bottom-right-radius: 8px; }
+
+#announcementLogTable tbody tr:nth-child(even) {
+    background-color: #1a202c; /* Alternate row color */
+}
+
 
 /* Responsive adjustments */
 @media (max-width: 768px) {
@@ -695,6 +845,7 @@
     }
     .filter-controls select,
     .filter-controls input[type="text"],
+    .filter-controls input[type="date"], /* Added date input */
     .filter-controls button {
         width: 100%; 
         max-width: none;
@@ -732,5 +883,11 @@
     .action-buttons button {
         margin-right: 0; /* Remove horizontal margin */
         width: 100%; /* Make buttons full width */
+    }
+
+    /* Analytics Charts on small screens */
+    .analytics-charts-container {
+        grid-template-columns: 1fr; /* Stack charts vertically */
+        gap: 20px;
     }
 }
