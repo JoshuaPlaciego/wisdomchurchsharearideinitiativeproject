@@ -1083,7 +1083,7 @@ function getOrCreateChartCanvas(canvasElementId) {
     } else {
         // If old canvas not found, try to find the parent from its known ID in HTML
         // This assumes the chart canvas is always inside a .chart-card
-        const chartCard = document.querySelector(`.chart-card canvas#${canvasElementId}`).closest('.chart-card');
+        const chartCard = document.querySelector(`.chart-card canvas#${canvasElementId}`)?.closest('.chart-card'); // Added optional chaining
         if (chartCard) {
             parent = chartCard;
         } else {
@@ -1373,7 +1373,7 @@ function renderPopularRoutesChart(rides, canvasElement) {
 
     // No need to destroy here, as getOrCreateChartCanvas already handles it
     popularRoutesChartInstance = new Chart(canvasElement, { // Use the passed canvasElement
-        type: 'horizontalBar', // Use horizontal bar for better readability of long labels
+        type: 'bar', // Changed from 'horizontalBar' to 'bar'
         data: {
             labels: labels,
             datasets: [{
