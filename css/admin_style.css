@@ -52,9 +52,18 @@
     line-height: 1.6;
 }
 
+.admin-note {
+    font-size: 0.9em;
+    color: #666;
+    font-style: italic;
+    margin-top: -20px; /* Adjust to sit closer to the header */
+    margin-bottom: 20px;
+}
+
 /* Filter controls */
 .filter-controls {
     display: flex;
+    flex-wrap: wrap; /* Allow items to wrap on smaller screens */
     justify-content: center;
     align-items: center;
     gap: 15px;
@@ -65,17 +74,25 @@
     box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
 
+.filter-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
 .filter-controls label {
     font-weight: bold;
     color: #34495e;
 }
 
-.filter-controls select {
+.filter-controls select,
+.filter-controls input[type="text"] { /* Apply to search input as well */
     padding: 8px 12px;
     border: 1px solid #ccc;
     border-radius: 5px;
     background-color: #f9f9f9;
     font-size: 1rem;
+    min-width: 120px; /* Ensure filters have a minimum width */
 }
 
 .filter-controls button {
@@ -121,7 +138,33 @@
     font-weight: bold;
     color: #333;
     white-space: nowrap; /* Prevent header text wrapping */
+    cursor: pointer; /* Indicate sortable columns */
+    position: relative; /* For sort indicator arrows */
+    padding-right: 25px; /* Make space for arrow */
 }
+
+/* Sort indicators for table headers */
+#usersTable th.sort-asc::after,
+#usersTable th.sort-desc::after {
+    content: '';
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 0;
+    height: 0;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+}
+
+#usersTable th.sort-asc::after {
+    border-bottom: 5px solid #333; /* Up arrow */
+}
+
+#usersTable th.sort-desc::after {
+    border-top: 5px solid #333; /* Down arrow */
+}
+
 
 #usersTable tbody tr:nth-child(even) {
     background-color: #f8f8f8;
@@ -154,9 +197,113 @@
 }
 
 /* No users message */
-#usersTable tbody tr td[colspan="7"] {
+#usersTable tbody tr td[colspan="9"] { /* Updated colspan to 9 */
     text-align: center;
     font-style: italic;
     color: #777;
     padding: 20px;
+}
+
+/* Role Selector Dropdown in Header */
+.role-selector-container {
+    margin-right: 20px; /* Space between selector and logout button */
+}
+
+.role-selector {
+    padding: 8px 12px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: #f9f9f9;
+    font-size: 1rem;
+    color: #333;
+    cursor: pointer;
+}
+
+.role-selector:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+
+/* NEW: Styles for the Custom Confirmation Modal */
+/* Reusing .modal and .modal-content from style.css */
+#confirmationModal .modal-content {
+    max-width: 400px; /* Smaller for confirmation */
+    padding: 20px; /* Add some padding to the content area */
+}
+
+#confirmationModal .modal-header-fixed {
+    padding: 10px 0; /* Adjust padding for smaller header */
+    border-bottom: none; /* No border for simple confirmation */
+}
+
+#confirmationModal h2 {
+    margin: 0;
+    font-size: 1.5rem;
+    text-align: center;
+    color: #333;
+}
+
+#confirmationModal p {
+    text-align: center;
+    margin: 20px 0;
+    font-size: 1.1rem;
+    line-height: 1.5;
+    color: #555;
+}
+
+#confirmationModal .button-group {
+    display: flex;
+    justify-content: center;
+    gap: 15px; /* Space between buttons */
+    margin-top: 20px;
+}
+
+#confirmationModal .confirm-button,
+#confirmationModal .cancel-button {
+    flex: 1; /* Make buttons take equal width */
+    max-width: 120px; /* Limit button width */
+    padding: 10px 15px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background-color 0.3s ease;
+}
+
+#confirmationModal .confirm-button {
+    background-color: #28a745; /* Green for confirm */
+    color: white;
+}
+
+#confirmationModal .confirm-button:hover {
+    background-color: #218838;
+}
+
+#confirmationModal .cancel-button {
+    background-color: #6c757d; /* Grey for cancel */
+    color: white;
+}
+
+#confirmationModal .cancel-button:hover {
+    background-color: #5a6268;
+}
+
+/* Responsive adjustments for filter controls */
+@media (max-width: 768px) {
+    .filter-controls {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .filter-group {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 5px; /* Reduce gap for stacking */
+    }
+    .filter-controls select,
+    .filter-controls input[type="text"],
+    .filter-controls button {
+        width: 100%; /* Make inputs and buttons full width */
+        max-width: none;
+    }
 }

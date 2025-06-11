@@ -13,6 +13,22 @@
     <!-- Global Notification Message Box (reused from index.html) -->
     <div id="notificationMessageBox" class="global-message-box"></div>
 
+    <!-- Custom Confirmation Modal (for Approve/Reject) -->
+    <div id="confirmationModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header-fixed">
+                <h2>Confirm Action</h2>
+            </div>
+            <div class="modal-body-scrollable">
+                <p id="confirmationMessage"></p>
+                <div class="button-group">
+                    <button id="confirmActionButton" class="confirm-button">Confirm</button>
+                    <button id="cancelActionButton" class="cancel-button">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <header class="admin-header">
         <h1>Admin Dashboard</h1>
         <nav>
@@ -33,13 +49,32 @@
         <p class="admin-note">Note: Admin roles are assigned manually by the developer using the Firebase CLI or Admin SDK for security and cost control.</p>
 
         <div class="filter-controls">
-            <label for="statusFilter">Show Status:</label>
-            <select id="statusFilter">
-                <option value="Awaiting Admin Approval">Awaiting Admin Approval</option>
-                <option value="Awaiting Email Verification">Awaiting Email Verification</option>
-                <option value="Access Granted">Access Granted</option>
-                <option value="All">All Users</option>
-            </select>
+            <div class="filter-group">
+                <label for="statusFilter">Show Status:</label>
+                <select id="statusFilter">
+                    <option value="Awaiting Admin Approval">Awaiting Admin Approval</option>
+                    <option value="Awaiting Email Verification">Awaiting Email Verification</option>
+                    <option value="Access Granted">Access Granted</option>
+                    <option value="Rejected">Rejected</option>
+                    <option value="All">All Users</option>
+                </select>
+            </div>
+            
+            <div class="filter-group">
+                <label for="roleFilter">Filter by Role:</label>
+                <select id="roleFilter">
+                    <option value="All">All Roles</option>
+                    <option value="driver">Driver</option>
+                    <option value="passenger">Passenger</option>
+                    <option value="hybrid">Hybrid</option>
+                </select>
+            </div>
+
+            <div class="filter-group search-group">
+                <label for="userSearch">Search:</label>
+                <input type="text" id="userSearch" placeholder="Email, Name, Mobile...">
+            </div>
+
             <button id="refreshUsersButton">Refresh List</button>
         </div>
 
@@ -47,19 +82,20 @@
             <table id="usersTable">
                 <thead>
                     <tr>
-                        <th>Email</th>
-                        <th>First Name</th>
-                        <th>Last Name</th>
-                        <th>Role</th>
-                        <th>Status</th>
-                        <th>Registered On</th>
+                        <th data-sort-key="email">Email</th>
+                        <th data-sort-key="firstName">First Name</th>
+                        <th data-sort-key="lastName">Last Name</th>
+                        <th data-sort-key="mobile">Mobile</th> <!-- NEW FIELD -->
+                        <th data-sort-key="gender">Gender</th> <!-- NEW FIELD -->
+                        <th data-sort-key="role">Role</th>
+                        <th data-sort-key="accountStatus">Status</th>
+                        <th data-sort-key="createdAt">Registered On</th>
                         <th>Actions</th>
-                        <!-- REMOVED: Admin Status/Actions Column Header -->
                     </tr>
                 </thead>
                 <tbody>
                     <!-- User data will be loaded here by JavaScript -->
-                    <tr><td colspan="7">Loading users...</td></tr>
+                    <tr><td colspan="9">Loading users...</td></tr> <!-- Updated colspan -->
                 </tbody>
             </table>
         </div>
