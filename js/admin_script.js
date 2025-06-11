@@ -12,12 +12,12 @@ import {
 // Import Firestore specific functions
 import { 
     collection, 
-    getDocs, // Still used for one-time user fetch
+    getDocs, 
     query, 
     where, 
     doc, 
     updateDoc,
-    onSnapshot // NEW: Import onSnapshot for live monitoring
+    onSnapshot 
 } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
 
 // Import global notification functions and populateRoleSelector from dashboard_roles.js
@@ -85,12 +85,18 @@ const ridePageInfo = document.getElementById('ridePageInfo');
 const ridesPerPageSelect = document.getElementById('ridesPerPageSelect');
 const ridesTableHeader = document.querySelector('#ridesTable thead tr');
 
-// NEW: Booked Riders Modal Elements
+// Booked Riders Modal Elements
 const rideBookedRidersModal = document.getElementById('rideBookedRidersModal');
 const bookedRidersRideId = document.getElementById('bookedRidersRideId');
 const bookedRidersCountInfo = document.getElementById('bookedRidersCountInfo');
 const bookedRidersTableBody = document.querySelector('#bookedRidersTable tbody');
 const noBookedRidersMessage = document.getElementById('noBookedRidersMessage');
+
+// NEW: Passenger Ride History Modal Elements
+const passengerRidesModal = document.getElementById('passengerRidesModal');
+const passengerHistoryEmail = document.getElementById('passengerHistoryEmail');
+const passengerRidesTableBody = document.querySelector('#passengerRidesTable tbody');
+const noPassengerRidesMessage = document.getElementById('noPassengerRidesMessage');
 
 
 let allRides = []; // Stores all fetched rides
@@ -278,6 +284,16 @@ function renderUsers(users) {
             activateButton.onclick = (e) => { e.stopPropagation(); showConfirmationModal(user.id, 'Access Granted', user.email); }; 
             actionsCell.appendChild(activateButton);
         }
+
+        // NEW: Add "View Rides" button for each user
+        const viewRidesButton = document.createElement('button');
+        viewRidesButton.textContent = 'View Rides';
+        viewRidesButton.className = 'view-rides'; 
+        viewRidesButton.onclick = (e) => { 
+            e.stopPropagation(); 
+            openPassengerRidesModal(user.email); 
+        };
+        actionsCell.appendChild(viewRidesButton);
     });
 }
 
@@ -563,7 +579,7 @@ function updateUserPaginationControls(totalItems, totalPages) {
  * Establishes a real-time Firestore listener for ride data.
  */
 async function setupRidesLiveMonitoring() {
-    ridesTableBody.innerHTML = '<tr><td colspan="12">Loading rides data...</td></tr>'; // Adjusted colspan
+    ridesTableBody.innerHTML = '<tr><td colspan="12">Loading rides data...</td></tr>'; 
     try {
         const ridesRef = collection(db, 'rides'); 
         const q = query(ridesRef);
@@ -582,14 +598,14 @@ async function setupRidesLiveMonitoring() {
             applyRideFiltersAndSort();
         }, (error) => {
             console.error("Error setting up live rides monitoring:", error);
-            ridesTableBody.innerHTML = '<tr><td colspan="12" class="error-message">Error loading rides. Live monitoring failed.</td></tr>'; // Adjusted colspan
+            ridesTableBody.innerHTML = '<tr><td colspan="12" class="error-message">Error loading rides. Live monitoring failed.</td></tr>'; 
             displayGlobalNotification('Failed to set up live rides monitoring: ' + error.message, 'error');
         });
         displayGlobalNotification('Live monitoring for rides established!', 'info');
 
     } catch (error) {
         console.error("Error initiating live rides monitoring setup:", error);
-        ridesTableBody.innerHTML = '<tr><td colspan="12" class="error-message">Error initializing rides monitoring.</td></tr>'; // Adjusted colspan
+        ridesTableBody.innerHTML = '<tr><td colspan="12" class="error-message">Error initializing rides monitoring.</td></tr>'; 
         displayGlobalNotification('Error initializing rides monitoring: ' + error.message, 'error');
     }
 }
@@ -625,7 +641,7 @@ function applyRideFiltersAndSort() {
             if (valB === undefined || valB === null) valB = '';
 
             // Handle numeric values for sorting (seats, numBookedRiders)
-            if (currentRideSortKey === 'availableSeats' || currentRideSortKey === 'numBookedRiders') {
+            if (currentRideSortKey === 'availableSeats' || currentRideSortKey === 'numBookedRiders') { 
                 valA = parseFloat(valA) || 0;
                 valB = parseFloat(valB) || 0;
             } else if (currentRideSortKey === 'createdAt' || currentRideSortKey === 'rideDate') { 
@@ -661,7 +677,7 @@ function renderRidesTable(rides) {
     ridesTableBody.innerHTML = ''; 
 
     if (rides.length === 0) {
-        ridesTableBody.innerHTML = '<tr><td colspan="12">No rides found with the selected criteria.</td></tr>'; // Adjusted colspan
+        ridesTableBody.innerHTML = '<tr><td colspan="12">No rides found with the selected criteria.</td></tr>'; 
         return;
     }
 
@@ -671,7 +687,6 @@ function renderRidesTable(rides) {
         row.insertCell().textContent = ride.driverEmail || 'N/A';
         row.insertCell().textContent = (Array.isArray(ride.passengerEmails) && ride.passengerEmails.length > 0) ? ride.passengerEmails.join(', ') : 'None';
         
-        // NEW: Booked Riders Count Column
         const numBookedRiders = (Array.isArray(ride.passengerEmails) ? ride.passengerEmails.length : 0);
         const bookedRidersCell = row.insertCell();
         bookedRidersCell.textContent = numBookedRiders;
@@ -768,6 +783,42 @@ async function openBookedRidersModal(rideId, passengerEmails) {
 }
 
 /**
+ * NEW: Opens the modal to display the ride history for a specific passenger.
+ * @param {string} passengerEmail - The email of the passenger whose ride history to display.
+ */
+async function openPassengerRidesModal(passengerEmail) {
+    clearAllMessages();
+    passengerRidesTableBody.innerHTML = ''; // Clear previous data
+    passengerHistoryEmail.textContent = passengerEmail;
+    noPassengerRidesMessage.style.display = 'none';
+
+    const passengerRideHistory = allRides.filter(ride => 
+        Array.isArray(ride.passengerEmails) && ride.passengerEmails.includes(passengerEmail)
+    );
+
+    if (passengerRideHistory.length === 0) {
+        noPassengerRidesMessage.style.display = 'block';
+        passengerRidesModal.style.display = 'flex';
+        return;
+    }
+
+    passengerRideHistory.forEach(ride => {
+        const row = passengerRidesTableBody.insertRow();
+        row.insertCell().textContent = ride.id || 'N/A';
+        row.insertCell().textContent = ride.driverEmail || 'N/A';
+        row.insertCell().textContent = ride.startLocation || 'N/A';
+        row.insertCell().textContent = ride.endLocation || 'N/A';
+        row.insertCell().textContent = ride.rideDate && ride.rideDate.toDate ? ride.rideDate.toDate().toLocaleDateString() : 'N/A';
+        row.insertCell().textContent = ride.rideTime || 'N/A';
+        row.insertCell().textContent = ride.status || 'N/A';
+        row.insertCell().textContent = ride.createdAt && ride.createdAt.toDate ? ride.createdAt.toDate().toLocaleString() : 'N/A';
+    });
+
+    passengerRidesModal.style.display = 'flex';
+}
+
+
+/**
  * Updates a ride's status in Firestore.
  * @param {string} rideId - The ID of the ride to update.
  * @param {string} newStatus - The new status to set ('Offered', 'Booked', 'Completed', 'Cancelled').
@@ -858,7 +909,7 @@ if (exportRidesCsvButton) {
                 ride.id || '',
                 ride.driverEmail || '',
                 (Array.isArray(ride.passengerEmails) && ride.passengerEmails.length > 0) ? `"${ride.passengerEmails.join(', ')}"` : '',
-                (Array.isArray(ride.passengerEmails) ? ride.passengerEmails.length : 0), // Number of booked riders
+                (Array.isArray(ride.passengerEmails) ? ride.passengerEmails.length : 0), 
                 `"${String(ride.startLocation || '').replace(/"/g, '""')}"`,
                 `"${String(ride.endLocation || '').replace(/"/g, '""')}"`,
                 (ride.rideDate && ride.rideDate.toDate ? `"${ride.rideDate.toDate().toLocaleDateString()}"` : ''),

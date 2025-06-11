@@ -59,7 +59,7 @@
         </div>
     </div>
 
-    <!-- NEW: Ride Booked Riders List Modal -->
+    <!-- Ride Booked Riders List Modal -->
     <div id="rideBookedRidersModal" class="modal">
         <div class="modal-content">
             <span class="close-button" data-modal-id="rideBookedRidersModal">&times;</span>
@@ -81,6 +81,36 @@
                     </tbody>
                 </table>
                 <p id="noBookedRidersMessage" style="text-align: center; font-style: italic; color: #777; margin-top: 15px; display: none;">No riders have booked this ride yet.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- NEW: Passenger Ride History Modal -->
+    <div id="passengerRidesModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button" data-modal-id="passengerRidesModal">&times;</span>
+            <div class="modal-header-fixed">
+                <h2>Ride History for: <span id="passengerHistoryEmail"></span></h2>
+            </div>
+            <div class="modal-body-scrollable">
+                <table id="passengerRidesTable">
+                    <thead>
+                        <tr>
+                            <th>Ride ID</th>
+                            <th>Driver Email</th>
+                            <th>Start Location</th>
+                            <th>End Location</th>
+                            <th>Date</th>
+                            <th>Time</th>
+                            <th>Status</th>
+                            <th>Created On</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Passenger's ride data will be loaded here by JavaScript -->
+                    </tbody>
+                </table>
+                <p id="noPassengerRidesMessage" style="text-align: center; font-style: italic; color: #777; margin-top: 15px; display: none;">No rides found for this passenger.</p>
             </div>
         </div>
     </div>
@@ -207,7 +237,7 @@
                             <th data-sort-key="rideId">Ride ID</th>
                             <th data-sort-key="driverEmail">Driver Email</th>
                             <th data-sort-key="passengerEmails">Passenger(s) Email</th>
-                            <th data-sort-key="numBookedRiders">Booked Riders</th> <!-- NEW COLUMN -->
+                            <th data-sort-key="numBookedRiders">Booked Riders</th> 
                             <th data-sort-key="startLocation">Start Location</th>
                             <th data-sort-key="endLocation">End Location</th>
                             <th data-sort-key="rideDate">Date</th>
@@ -220,7 +250,7 @@
                     </thead>
                     <tbody>
                         <!-- Ride data will be loaded here by JavaScript -->
-                        <tr><td colspan="12">No ride data available.</td></tr> <!-- Updated colspan -->
+                        <tr><td colspan="12">No ride data available.</td></tr> 
                     </tbody>
                 </table>
             </div>

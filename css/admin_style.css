@@ -225,6 +225,15 @@
     background-color: #2980b9;
 }
 
+/* NEW: Style for the "View Rides" button in the Users table */
+.action-buttons button.view-rides {
+    background-color: #6c757d; /* Grey/blue color */
+    margin-top: 5px; /* Add some spacing if multiple buttons */
+}
+.action-buttons button.view-rides:hover {
+    background-color: #5a6268;
+}
+
 
 .action-buttons button:hover {
     opacity: 0.9;
@@ -454,43 +463,53 @@
 }
 
 
-/* NEW: Styles for Ride Booked Riders Modal */
-#rideBookedRidersModal .modal-content {
-    max-width: 700px; /* Adjust width as needed */
+/* Styles for Ride Booked Riders Modal (reused and extended for passenger history) */
+#rideBookedRidersModal .modal-content,
+#passengerRidesModal .modal-content { /* Apply to both modals */
+    max-width: 700px; 
 }
 
-#rideBookedRidersModal .modal-body-scrollable {
+#rideBookedRidersModal .modal-body-scrollable,
+#passengerRidesModal .modal-body-scrollable { /* Apply to both modals */
     padding: 20px;
 }
 
-#bookedRidersTable {
+#bookedRidersTable,
+#passengerRidesTable { /* Apply to both tables */
     width: 100%;
     border-collapse: collapse;
     margin-top: 15px;
 }
 
 #bookedRidersTable th,
-#bookedRidersTable td {
+#bookedRidersTable td,
+#passengerRidesTable th,
+#passengerRidesTable td { /* Apply to both tables */
     border: 1px solid #ddd;
     padding: 10px;
     text-align: left;
 }
 
-#bookedRidersTable th {
+#bookedRidersTable th,
+#passengerRidesTable th { /* Apply to both tables */
     background-color: #f2f2f2;
     font-weight: bold;
     color: #333;
 }
 
-#bookedRidersTable tbody tr:nth-child(even) {
+#bookedRidersTable tbody tr:nth-child(even),
+#passengerRidesTable tbody tr:nth-child(even) { /* Apply to both tables */
     background-color: #f8f8f8;
 }
 
-#bookedRidersTable tbody tr:hover {
+#bookedRidersTable tbody tr:hover,
+#passengerRidesTable tbody tr:hover { /* Apply to both tables */
     background-color: #e0e0e0;
 }
 
-#bookedRidersCountInfo {
+#bookedRidersCountInfo,
+#noBookedRidersMessage,
+#noPassengerRidesMessage { /* Apply to all info/no data messages */
     text-align: center;
     font-weight: bold;
     margin-bottom: 15px;
@@ -524,5 +543,14 @@
     .pagination-controls .items-per-page {
         width: 100%;
         text-align: center;
+    }
+    /* Adjust buttons in action cells for smaller screens */
+    .action-buttons {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+    }
+    .action-buttons button {
+        margin-right: 0; /* Remove horizontal margin */
     }
 }
