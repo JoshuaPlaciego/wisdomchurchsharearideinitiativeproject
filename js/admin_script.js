@@ -85,6 +85,14 @@ const ridePageInfo = document.getElementById('ridePageInfo');
 const ridesPerPageSelect = document.getElementById('ridesPerPageSelect');
 const ridesTableHeader = document.querySelector('#ridesTable thead tr');
 
+// NEW: Booked Riders Modal Elements
+const rideBookedRidersModal = document.getElementById('rideBookedRidersModal');
+const bookedRidersRideId = document.getElementById('bookedRidersRideId');
+const bookedRidersCountInfo = document.getElementById('bookedRidersCountInfo');
+const bookedRidersTableBody = document.querySelector('#bookedRidersTable tbody');
+const noBookedRidersMessage = document.getElementById('noBookedRidersMessage');
+
+
 let allRides = []; // Stores all fetched rides
 let currentRideSortKey = null;
 let currentRideSortDirection = 'asc';
@@ -93,7 +101,6 @@ let currentRideSortDirection = 'asc';
 let currentRidePage = 1;
 let rideItemsPerPage = parseInt(ridesPerPageSelect.value, 10);
 
-// NEW: Unsubscribe function for the Firestore real-time listener for rides
 let unsubscribeRidesSnapshot = null;
 
 
@@ -141,7 +148,7 @@ async function fetchAllUsers() {
     try {
         const usersRef = collection(db, 'users');
         const q = query(usersRef); 
-        const querySnapshot = await getDocs(q); // Still using getDocs for users, can be changed to onSnapshot if desired
+        const querySnapshot = await getDocs(q); 
         allUsers = []; 
         querySnapshot.forEach((doc) => {
             allUsers.push({ id: doc.id, ...doc.data() });
@@ -245,10 +252,8 @@ function renderUsers(users) {
         actionsCell.className = 'action-buttons';
 
         // Add event listener to the row to open user detail modal
-        // Use a wrapper function to prevent immediate execution and pass user data
         row.addEventListener('click', () => openUserDetailModal(user));
 
-        // Display Approve/Reject/Suspend/Activate buttons directly in the table row for quick actions
         if (user.accountStatus === 'Awaiting Admin Approval' || user.accountStatus === 'Awaiting Email Verification') {
             const approveButton = document.createElement('button');
             approveButton.textContent = 'Approve';
@@ -314,8 +319,6 @@ async function openUserDetailModal(user) {
     suspendUserButton.style.display = 'none';
     activateUserButton.style.display = 'none';
 
-    // Set up suspend/activate buttons based on current status
-    // Temporarily store the user ID for modal actions
     suspendUserButton.dataset.userId = user.id;
     activateUserButton.dataset.userId = user.id;
 
@@ -560,35 +563,33 @@ function updateUserPaginationControls(totalItems, totalPages) {
  * Establishes a real-time Firestore listener for ride data.
  */
 async function setupRidesLiveMonitoring() {
-    ridesTableBody.innerHTML = '<tr><td colspan="12">Loading rides data...</td></tr>';
+    ridesTableBody.innerHTML = '<tr><td colspan="12">Loading rides data...</td></tr>'; // Adjusted colspan
     try {
         const ridesRef = collection(db, 'rides'); 
         const q = query(ridesRef);
 
-        // If there's an existing listener, unsubscribe it first
         if (unsubscribeRidesSnapshot) {
             unsubscribeRidesSnapshot();
             unsubscribeRidesSnapshot = null;
         }
 
-        // Set up the new real-time listener
         unsubscribeRidesSnapshot = onSnapshot(q, (querySnapshot) => {
             allRides = [];
             querySnapshot.forEach((doc) => {
                 allRides.push({ id: doc.id, ...doc.data() });
             });
-            currentRidePage = 1; // Reset to first page on new data received
+            currentRidePage = 1; 
             applyRideFiltersAndSort();
         }, (error) => {
             console.error("Error setting up live rides monitoring:", error);
-            ridesTableBody.innerHTML = '<tr><td colspan="12" class="error-message">Error loading rides. Live monitoring failed.</td></tr>';
+            ridesTableBody.innerHTML = '<tr><td colspan="12" class="error-message">Error loading rides. Live monitoring failed.</td></tr>'; // Adjusted colspan
             displayGlobalNotification('Failed to set up live rides monitoring: ' + error.message, 'error');
         });
         displayGlobalNotification('Live monitoring for rides established!', 'info');
 
     } catch (error) {
         console.error("Error initiating live rides monitoring setup:", error);
-        ridesTableBody.innerHTML = '<tr><td colspan="12" class="error-message">Error initializing rides monitoring.</td></tr>';
+        ridesTableBody.innerHTML = '<tr><td colspan="12" class="error-message">Error initializing rides monitoring.</td></tr>'; // Adjusted colspan
         displayGlobalNotification('Error initializing rides monitoring: ' + error.message, 'error');
     }
 }
@@ -623,11 +624,11 @@ function applyRideFiltersAndSort() {
             if (valA === undefined || valA === null) valA = '';
             if (valB === undefined || valB === null) valB = '';
 
-            // Handle numeric values for sorting (seats, price)
-            if (currentRideSortKey === 'availableSeats' || currentRideSortKey === 'price') {
+            // Handle numeric values for sorting (seats, numBookedRiders)
+            if (currentRideSortKey === 'availableSeats' || currentRideSortKey === 'numBookedRiders') {
                 valA = parseFloat(valA) || 0;
                 valB = parseFloat(valB) || 0;
-            } else if (currentRideSortKey === 'createdAt' || currentRideSortKey === 'rideDate') { // Assuming rideDate is a timestamp
+            } else if (currentRideSortKey === 'createdAt' || currentRideSortKey === 'rideDate') { 
                 valA = valA ? valA.toMillis() : 0;
                 valB = valB ? valB.toMillis() : 0;
             } else if (typeof valA === 'string') {
@@ -657,10 +658,10 @@ function applyRideFiltersAndSort() {
  * @param {Array<Object>} rides - Array of ride objects.
  */
 function renderRidesTable(rides) {
-    ridesTableBody.innerHTML = ''; // Clear existing rows
+    ridesTableBody.innerHTML = ''; 
 
     if (rides.length === 0) {
-        ridesTableBody.innerHTML = '<tr><td colspan="12">No rides found with the selected criteria.</td></tr>';
+        ridesTableBody.innerHTML = '<tr><td colspan="12">No rides found with the selected criteria.</td></tr>'; // Adjusted colspan
         return;
     }
 
@@ -669,16 +670,34 @@ function renderRidesTable(rides) {
         row.insertCell().textContent = ride.id || 'N/A';
         row.insertCell().textContent = ride.driverEmail || 'N/A';
         row.insertCell().textContent = (Array.isArray(ride.passengerEmails) && ride.passengerEmails.length > 0) ? ride.passengerEmails.join(', ') : 'None';
+        
+        // NEW: Booked Riders Count Column
+        const numBookedRiders = (Array.isArray(ride.passengerEmails) ? ride.passengerEmails.length : 0);
+        const bookedRidersCell = row.insertCell();
+        bookedRidersCell.textContent = numBookedRiders;
+        bookedRidersCell.style.cursor = 'pointer'; 
+        bookedRidersCell.style.textDecoration = 'underline';
+        bookedRidersCell.style.color = '#3498db';
+        if (numBookedRiders > 0) {
+            bookedRidersCell.addEventListener('click', (e) => {
+                e.stopPropagation(); 
+                openBookedRidersModal(ride.id, ride.passengerEmails);
+            });
+        } else {
+            bookedRidersCell.style.cursor = 'default';
+            bookedRidersCell.style.textDecoration = 'none';
+            bookedRidersCell.style.color = '#777';
+        }
+
         row.insertCell().textContent = ride.startLocation || 'N/A';
         row.insertCell().textContent = ride.endLocation || 'N/A';
         
         const rideDate = ride.rideDate && ride.rideDate.toDate ? ride.rideDate.toDate().toLocaleDateString() : 'N/A';
         row.insertCell().textContent = rideDate;
         
-        row.insertCell().textContent = ride.rideTime || 'N/A'; // Assuming rideTime is a string or part of rideDate
+        row.insertCell().textContent = ride.rideTime || 'N/A'; 
         row.insertCell().textContent = ride.availableSeats !== undefined ? ride.availableSeats : 'N/A';
         row.insertCell().textContent = ride.status || 'N/A';
-        row.insertCell().textContent = ride.price !== undefined ? `₱${ride.price.toFixed(2)}` : 'N/A'; // Format as currency
 
         const createdAt = ride.createdAt && ride.createdAt.toDate ? ride.createdAt.toDate().toLocaleString() : 'N/A';
         row.insertCell().textContent = createdAt;
@@ -686,30 +705,66 @@ function renderRidesTable(rides) {
         const actionsCell = row.insertCell();
         actionsCell.className = 'action-buttons';
 
-        // Example actions for rides (can be extended)
         if (ride.status === 'Offered' || ride.status === 'Booked') {
             const cancelButton = document.createElement('button');
             cancelButton.textContent = 'Cancel';
-            cancelButton.className = 'reject'; // Reusing reject style for cancel
+            cancelButton.className = 'reject'; 
             cancelButton.onclick = (e) => { e.stopPropagation(); showConfirmationModal(ride.id, 'Cancelled', `Ride ${ride.id}`, 'ride'); };
             actionsCell.appendChild(cancelButton);
         }
         if (ride.status === 'Booked') {
             const completeButton = document.createElement('button');
             completeButton.textContent = 'Complete';
-            completeButton.className = 'approve'; // Reusing approve style for complete
+            completeButton.className = 'approve'; 
             completeButton.onclick = (e) => { e.stopPropagation(); showConfirmationModal(ride.id, 'Completed', `Ride ${ride.id}`, 'ride'); };
             actionsCell.appendChild(completeButton);
         }
-        // If status is cancelled or completed, offer to reactivate/relist (adjust logic as needed)
         if (ride.status === 'Cancelled' || ride.status === 'Completed') {
             const relistButton = document.createElement('button');
             relistButton.textContent = 'Relist';
-            relistButton.className = 'activate'; // Reusing activate style
+            relistButton.className = 'activate'; 
             relistButton.onclick = (e) => { e.stopPropagation(); showConfirmationModal(ride.id, 'Offered', `Ride ${ride.id}`, 'ride'); };
             actionsCell.appendChild(relistButton);
         }
     });
+}
+
+/**
+ * Opens the modal to display the list of riders who booked a specific ride.
+ * @param {string} rideId - The ID of the ride.
+ * @param {Array<string>} passengerEmails - An array of emails of the passengers who booked.
+ */
+async function openBookedRidersModal(rideId, passengerEmails) {
+    clearAllMessages();
+    bookedRidersTableBody.innerHTML = ''; 
+    bookedRidersRideId.textContent = rideId;
+    bookedRidersCountInfo.textContent = `Total Booked: ${passengerEmails.length}`;
+    noBookedRidersMessage.style.display = 'none';
+
+    if (passengerEmails.length === 0) {
+        noBookedRidersMessage.style.display = 'block';
+        rideBookedRidersModal.style.display = 'flex';
+        return;
+    }
+
+    const bookedRidersDetails = passengerEmails.map(email => 
+        allUsers.find(user => user.email === email)
+    ).filter(Boolean); 
+
+    if (bookedRidersDetails.length === 0) {
+        noBookedRidersMessage.style.display = 'block';
+        rideBookedRidersModal.style.display = 'flex';
+        return;
+    }
+
+    bookedRidersDetails.forEach(rider => {
+        const row = bookedRidersTableBody.insertRow();
+        row.insertCell().textContent = rider.email || 'N/A';
+        row.insertCell().textContent = `${rider.firstName || ''} ${rider.lastName || ''}`.trim() || 'N/A';
+        row.insertCell().textContent = rider.mobile || 'N/A';
+    });
+
+    rideBookedRidersModal.style.display = 'flex';
 }
 
 /**
@@ -724,7 +779,6 @@ async function updateRideStatus(rideId, newStatus) {
             status: newStatus,
             updatedAt: serverTimestamp()
         });
-        // No need to call fetchAllRides() here as onSnapshot will automatically update
         displayGlobalNotification(`Ride status updated to "${newStatus}" for Ride ID: ${rideId}`, 'success');
     } catch (error) {
         console.error("Error updating ride status:", error);
@@ -746,19 +800,17 @@ if (rideSearch) {
 }
 
 if (refreshRidesButton) {
-    // For live monitoring, refresh button simply re-applies filters, not re-fetches
-    refreshRridesButton.addEventListener('click', () => { currentRidePage = 1; applyRideFiltersAndSort(); });
+    refreshRidesButton.addEventListener('click', () => { currentRidePage = 1; applyRideFiltersAndSort(); });
 }
 
 // Export Rides Data to CSV
 if (exportRidesCsvButton) {
     exportRidesCsvButton.addEventListener('click', () => {
         const headers = [
-            'Ride ID', 'Driver Email', 'Passenger(s) Email', 'Start Location', 'End Location',
-            'Ride Date', 'Ride Time', 'Available Seats', 'Status', 'Price', 'Created On'
+            'Ride ID', 'Driver Email', 'Passenger(s) Email', 'Number of Booked Riders', 'Start Location', 'End Location',
+            'Ride Date', 'Ride Time', 'Available Seats', 'Status', 'Created On'
         ];
         
-        // Use the currently filtered and sorted rides for export
         let ridesToExport = [...allRides];
         const selectedStatus = rideStatusFilter.value;
         if (selectedStatus !== 'All') {
@@ -781,7 +833,7 @@ if (exportRidesCsvButton) {
                 if (valA === undefined || valA === null) valA = '';
                 if (valB === undefined || valB === null) valB = '';
 
-                if (currentRideSortKey === 'availableSeats' || currentRideSortKey === 'price') {
+                if (currentRideSortKey === 'availableSeats' || currentRideSortKey === 'numBookedRiders') {
                     valA = parseFloat(valA) || 0;
                     valB = parseFloat(valB) || 0;
                 } else if (currentRideSortKey === 'createdAt' || currentRideSortKey === 'rideDate') {
@@ -806,13 +858,13 @@ if (exportRidesCsvButton) {
                 ride.id || '',
                 ride.driverEmail || '',
                 (Array.isArray(ride.passengerEmails) && ride.passengerEmails.length > 0) ? `"${ride.passengerEmails.join(', ')}"` : '',
+                (Array.isArray(ride.passengerEmails) ? ride.passengerEmails.length : 0), // Number of booked riders
                 `"${String(ride.startLocation || '').replace(/"/g, '""')}"`,
                 `"${String(ride.endLocation || '').replace(/"/g, '""')}"`,
                 (ride.rideDate && ride.rideDate.toDate ? `"${ride.rideDate.toDate().toLocaleDateString()}"` : ''),
                 (ride.rideTime || ''),
                 (ride.availableSeats !== undefined ? ride.availableSeats : ''),
                 (ride.status || ''),
-                (ride.price !== undefined ? ride.price.toFixed(2) : ''),
                 (ride.createdAt && ride.createdAt.toDate ? `"${ride.createdAt.toDate().toLocaleString()}"` : '')
             ];
             csvContent += row.join(',') + '\n';
@@ -913,8 +965,8 @@ onAuthStateChanged(auth, async (user) => {
 
                 if (window.location.pathname.includes('admin_dashboard.html')) {
                     populateRoleSelector(); 
-                    fetchAllUsers(); // Fetch and display user data
-                    setupRidesLiveMonitoring(); // NEW: Start live monitoring for rides
+                    fetchAllUsers(); 
+                    setupRidesLiveMonitoring(); 
                 }
 
             } else {

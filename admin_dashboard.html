@@ -59,6 +59,32 @@
         </div>
     </div>
 
+    <!-- NEW: Ride Booked Riders List Modal -->
+    <div id="rideBookedRidersModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button" data-modal-id="rideBookedRidersModal">&times;</span>
+            <div class="modal-header-fixed">
+                <h2>Riders for Ride ID: <span id="bookedRidersRideId"></span></h2>
+            </div>
+            <div class="modal-body-scrollable">
+                <p id="bookedRidersCountInfo">Total Booked: 0</p>
+                <table id="bookedRidersTable">
+                    <thead>
+                        <tr>
+                            <th>Email</th>
+                            <th>Name</th>
+                            <th>Mobile</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Booked rider data will be loaded here by JavaScript -->
+                    </tbody>
+                </table>
+                <p id="noBookedRidersMessage" style="text-align: center; font-style: italic; color: #777; margin-top: 15px; display: none;">No riders have booked this ride yet.</p>
+            </div>
+        </div>
+    </div>
+
     <header class="admin-header">
         <h1>Admin Dashboard</h1>
         <nav>
@@ -150,7 +176,7 @@
             </div>
         </section>
 
-        <!-- NEW: Rides Monitoring Section -->
+        <!-- Rides Overview & Management Section -->
         <section class="admin-section">
             <h2>Rides Overview & Management</h2>
             <p>Monitor offered, booked, completed, and cancelled rides.</p>
@@ -180,14 +206,14 @@
                         <tr>
                             <th data-sort-key="rideId">Ride ID</th>
                             <th data-sort-key="driverEmail">Driver Email</th>
-                            <th data-sort-key="passengerEmails">Passenger(s)</th>
+                            <th data-sort-key="passengerEmails">Passenger(s) Email</th>
+                            <th data-sort-key="numBookedRiders">Booked Riders</th> <!-- NEW COLUMN -->
                             <th data-sort-key="startLocation">Start Location</th>
                             <th data-sort-key="endLocation">End Location</th>
                             <th data-sort-key="rideDate">Date</th>
                             <th data-sort-key="rideTime">Time</th>
                             <th data-sort-key="availableSeats">Seats</th>
                             <th data-sort-key="status">Status</th>
-                            <th data-sort-key="price">Price</th>
                             <th data-sort-key="createdAt">Created On</th>
                             <th>Actions</th>
                         </tr>

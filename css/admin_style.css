@@ -40,7 +40,7 @@
     color: #34495e;
 }
 
-/* NEW: Admin Section for better organization */
+/* Admin Section for better organization */
 .admin-section {
     background-color: #ffffff;
     padding: 30px;
@@ -398,13 +398,13 @@
 /* Pagination Controls Styles (reused) */
 .pagination-controls {
     display: flex;
-    flex-wrap: wrap; /* Allow wrapping for responsiveness */
+    flex-wrap: wrap; 
     justify-content: center;
     align-items: center;
     gap: 15px;
     margin-top: 25px;
     padding: 15px;
-    background-color: #f8f8f8; /* Light background for pagination */
+    background-color: #f8f8f8; 
     border-radius: 8px;
     box-shadow: 0 1px 3px rgba(0,0,0,0.05);
 }
@@ -430,7 +430,7 @@
 }
 
 .pagination-controls #pageInfo,
-.pagination-controls #ridePageInfo { /* Added ridePageInfo */
+.pagination-controls #ridePageInfo { 
     font-weight: bold;
     color: #34495e;
     min-width: 120px; 
@@ -451,6 +451,49 @@
     border-radius: 4px;
     background-color: #ffffff;
     font-size: 0.9em;
+}
+
+
+/* NEW: Styles for Ride Booked Riders Modal */
+#rideBookedRidersModal .modal-content {
+    max-width: 700px; /* Adjust width as needed */
+}
+
+#rideBookedRidersModal .modal-body-scrollable {
+    padding: 20px;
+}
+
+#bookedRidersTable {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+}
+
+#bookedRidersTable th,
+#bookedRidersTable td {
+    border: 1px solid #ddd;
+    padding: 10px;
+    text-align: left;
+}
+
+#bookedRidersTable th {
+    background-color: #f2f2f2;
+    font-weight: bold;
+    color: #333;
+}
+
+#bookedRidersTable tbody tr:nth-child(even) {
+    background-color: #f8f8f8;
+}
+
+#bookedRidersTable tbody tr:hover {
+    background-color: #e0e0e0;
+}
+
+#bookedRidersCountInfo {
+    text-align: center;
+    font-weight: bold;
+    margin-bottom: 15px;
 }
 
 
