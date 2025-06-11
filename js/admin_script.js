@@ -12,11 +12,12 @@ import {
 // Import Firestore specific functions
 import { 
     collection, 
-    getDocs, 
+    getDocs, // Still used for one-time user fetch
     query, 
     where, 
     doc, 
-    updateDoc 
+    updateDoc,
+    onSnapshot // NEW: Import onSnapshot for live monitoring
 } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
 
 // Import global notification functions and populateRoleSelector from dashboard_roles.js
@@ -92,6 +93,9 @@ let currentRideSortDirection = 'asc';
 let currentRidePage = 1;
 let rideItemsPerPage = parseInt(ridesPerPageSelect.value, 10);
 
+// NEW: Unsubscribe function for the Firestore real-time listener for rides
+let unsubscribeRidesSnapshot = null;
+
 
 // --- General Modal Close Buttons ---
 document.querySelectorAll('.close-button').forEach(button => {
@@ -110,6 +114,11 @@ if (adminLogoutButton) {
     adminLogoutButton.addEventListener('click', async () => {
         try {
             await signOut(auth);
+            // Stop Firestore listeners on logout to prevent memory leaks
+            if (unsubscribeRidesSnapshot) {
+                unsubscribeRidesSnapshot();
+                unsubscribeRidesSnapshot = null;
+            }
             sessionStorage.removeItem('currentUserRole');
             sessionStorage.removeItem('isAdmin');
             window.location.href = 'index.html'; 
@@ -132,7 +141,7 @@ async function fetchAllUsers() {
     try {
         const usersRef = collection(db, 'users');
         const q = query(usersRef); 
-        const querySnapshot = await getDocs(q);
+        const querySnapshot = await getDocs(q); // Still using getDocs for users, can be changed to onSnapshot if desired
         allUsers = []; 
         querySnapshot.forEach((doc) => {
             allUsers.push({ id: doc.id, ...doc.data() });
@@ -548,24 +557,39 @@ function updateUserPaginationControls(totalItems, totalPages) {
 // --- Rides Monitoring Functions ---
 
 /**
- * Fetches ride data from Firestore.
+ * Establishes a real-time Firestore listener for ride data.
  */
-async function fetchAllRides() {
+async function setupRidesLiveMonitoring() {
     ridesTableBody.innerHTML = '<tr><td colspan="12">Loading rides data...</td></tr>';
     try {
-        const ridesRef = collection(db, 'rides'); // Assuming a 'rides' collection
+        const ridesRef = collection(db, 'rides'); 
         const q = query(ridesRef);
-        const querySnapshot = await getDocs(q);
-        allRides = [];
-        querySnapshot.forEach((doc) => {
-            allRides.push({ id: doc.id, ...doc.data() });
+
+        // If there's an existing listener, unsubscribe it first
+        if (unsubscribeRidesSnapshot) {
+            unsubscribeRidesSnapshot();
+            unsubscribeRidesSnapshot = null;
+        }
+
+        // Set up the new real-time listener
+        unsubscribeRidesSnapshot = onSnapshot(q, (querySnapshot) => {
+            allRides = [];
+            querySnapshot.forEach((doc) => {
+                allRides.push({ id: doc.id, ...doc.data() });
+            });
+            currentRidePage = 1; // Reset to first page on new data received
+            applyRideFiltersAndSort();
+        }, (error) => {
+            console.error("Error setting up live rides monitoring:", error);
+            ridesTableBody.innerHTML = '<tr><td colspan="12" class="error-message">Error loading rides. Live monitoring failed.</td></tr>';
+            displayGlobalNotification('Failed to set up live rides monitoring: ' + error.message, 'error');
         });
-        currentRidePage = 1; // Reset to first page after fetching new data
-        applyRideFiltersAndSort();
+        displayGlobalNotification('Live monitoring for rides established!', 'info');
+
     } catch (error) {
-        console.error("Error fetching rides:", error);
-        ridesTableBody.innerHTML = '<tr><td colspan="12" class="error-message">Error loading rides. Please ensure a "rides" collection exists and has data.</td></tr>';
-        displayGlobalNotification('Failed to load rides: ' + error.message, 'error');
+        console.error("Error initiating live rides monitoring setup:", error);
+        ridesTableBody.innerHTML = '<tr><td colspan="12" class="error-message">Error initializing rides monitoring.</td></tr>';
+        displayGlobalNotification('Error initializing rides monitoring: ' + error.message, 'error');
     }
 }
 
@@ -700,8 +724,8 @@ async function updateRideStatus(rideId, newStatus) {
             status: newStatus,
             updatedAt: serverTimestamp()
         });
+        // No need to call fetchAllRides() here as onSnapshot will automatically update
         displayGlobalNotification(`Ride status updated to "${newStatus}" for Ride ID: ${rideId}`, 'success');
-        fetchAllRides(); // Refresh all ride data and re-apply filters/sort
     } catch (error) {
         console.error("Error updating ride status:", error);
         let errorMessage = "Failed to update ride status.";
@@ -722,7 +746,8 @@ if (rideSearch) {
 }
 
 if (refreshRidesButton) {
-    refreshRidesButton.addEventListener('click', fetchAllRides);
+    // For live monitoring, refresh button simply re-applies filters, not re-fetches
+    refreshRridesButton.addEventListener('click', () => { currentRidePage = 1; applyRideFiltersAndSort(); });
 }
 
 // Export Rides Data to CSV
@@ -889,7 +914,7 @@ onAuthStateChanged(auth, async (user) => {
                 if (window.location.pathname.includes('admin_dashboard.html')) {
                     populateRoleSelector(); 
                     fetchAllUsers(); // Fetch and display user data
-                    fetchAllRides(); // Fetch and display ride data
+                    setupRidesLiveMonitoring(); // NEW: Start live monitoring for rides
                 }
 
             } else {
