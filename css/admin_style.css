@@ -334,6 +334,21 @@
 }
 
 /* Styles for the Custom Confirmation Modal (reused) */
+.modal {
+    display: none; /* Hidden by default */
+    position: fixed; /* Stay in place */
+    z-index: 9999; /* HIGHER Z-INDEX FOR MODALS */
+    left: 0;
+    top: 0;
+    width: 100%; /* Full width */
+    height: 100%; /* Full height */
+    overflow: auto; /* Enable scroll for the entire modal if its content exceeds viewport */
+    background-color: rgba(0,0,0,0.7); /* Darker backdrop */
+    justify-content: center;
+    align-items: center;
+    backdrop-filter: blur(5px); /* Add a subtle blur effect */
+}
+
 #confirmationModal .modal-content {
     max-width: 450px; /* Slightly larger */
     padding: 30px; /* More padding */
@@ -955,11 +970,6 @@
 #errorLogTable tbody tr:nth-child(even) {
     background-color: #1a202c; /* Alternate row color */
 }
-
-#errorLogTable tbody tr:hover {
-    background-color: #2d3748;
-}
-
 
 /* Responsive adjustments */
 @media (max-width: 768px) {
