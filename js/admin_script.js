@@ -134,6 +134,15 @@ const announcementLogTableBody = document.querySelector('#announcementLogTable t
 
 let unsubscribeAnnouncementsSnapshot = null;
 
+// --- NEW: API Usage & System Health Elements ---
+const usersCountDisplay = document.getElementById('usersCountDisplay');
+const ridesCountDisplay = document.getElementById('ridesCountDisplay');
+const announcementsCountDisplay = document.getElementById('announcementsCountDisplay');
+const firebaseConsoleLink = document.getElementById('firebaseConsoleLink');
+const errorLogTableBody = document.querySelector('#errorLogTable tbody');
+const refreshUsageMetricsButton = document.getElementById('refreshUsageMetricsButton');
+
+
 // --- NEW: Tab Elements ---
 const tabButtons = document.querySelectorAll('.tab-button');
 const tabPanes = document.querySelectorAll('.tab-pane');
@@ -195,6 +204,7 @@ async function fetchAllUsers() {
         currentUserPage = 1; 
         applyUserFiltersAndSort(); 
         updateAnalyticsCharts(); // NEW: Refresh analytics charts after user data is fetched
+        updateFirebaseUsageMetrics(); // NEW: Update usage metrics after fetching users
     } catch (error) {
         console.error("Error fetching users:", error);
         usersTableBody.innerHTML = '<tr><td colspan="9" class="error-message">Error loading users. Please try again.</td></tr>'; 
@@ -630,6 +640,7 @@ async function setupRidesLiveMonitoring() {
             currentRidePage = 1; 
             applyRideFiltersAndSort();
             updateAnalyticsCharts(); // NEW: Refresh analytics charts after ride data is fetched
+            updateFirebaseUsageMetrics(); // NEW: Update usage metrics after fetching rides
         }, (error) => {
             console.error("Error setting up live rides monitoring:", error);
             ridesTableBody.innerHTML = '<tr><td colspan="12" class="error-message">Error loading rides. Live monitoring failed.</td></tr>'; 
@@ -1384,6 +1395,7 @@ async function setupAnnouncementsLiveMonitoring() {
 
         unsubscribeAnnouncementsSnapshot = onSnapshot(q, (querySnapshot) => {
             renderAnnouncementsLog(querySnapshot.docs);
+            updateFirebaseUsageMetrics(); // NEW: Update usage metrics after fetching announcements
         }, (error) => {
             console.error("Error setting up live announcements monitoring:", error);
             announcementLogTableBody.innerHTML = '<tr><td colspan="4" class="error-message">Error loading announcements. Live monitoring failed.</td></tr>';
@@ -1456,6 +1468,84 @@ if (sendAnnouncementButton) {
 }
 
 
+// --- NEW: API Usage & System Health Functions ---
+
+/**
+ * Updates and displays the Firebase usage metrics (document counts).
+ * Note: For actual read/write/delete/auth metrics, the Firebase Console is the authoritative source.
+ * This function provides in-app document counts.
+ */
+async function updateFirebaseUsageMetrics() {
+    // Display document counts
+    if (usersCountDisplay) {
+        usersCountDisplay.textContent = `Total Users: ${allUsers.length}`;
+    }
+    if (ridesCountDisplay) {
+        ridesCountDisplay.textContent = `Total Rides: ${allRides.length}`;
+    }
+
+    // To get announcements count, we need to ensure allAnnouncements is populated
+    // This is handled by setupAnnouncementsLiveMonitoring now, so we can just use it.
+    try {
+        const announcementsRef = collection(db, 'announcements');
+        const q = query(announcementsRef);
+        const querySnapshot = await getDocs(q);
+        const totalAnnouncements = querySnapshot.size;
+        if (announcementsCountDisplay) {
+            announcementsCountDisplay.textContent = `Total Announcements: ${totalAnnouncements}`;
+        }
+    } catch (error) {
+        console.error("Error fetching announcements count for usage metrics:", error);
+        if (announcementsCountDisplay) {
+            announcementsCountDisplay.textContent = `Total Announcements: Error`;
+        }
+    }
+
+    // Set Firebase Console link dynamically
+    if (firebaseConsoleLink) {
+        const projectId = auth.app.options.projectId; // Get project ID from Firebase config
+        if (projectId) {
+            firebaseConsoleLink.href = `https://console.firebase.google.com/project/${projectId}/overview`;
+        } else {
+            firebaseConsoleLink.href = '#'; // Fallback
+            firebaseConsoleLink.title = 'Firebase Project ID not found';
+        }
+    }
+
+    // Placeholder for error log - in a real application, you'd fetch from an 'error_logs' collection
+    renderErrorLog([]); // Pass an empty array for now, or fetch from a dummy collection
+}
+
+/**
+ * Renders a placeholder for the error log table.
+ * In a real application, this would fetch from a dedicated 'error_logs' Firestore collection.
+ * @param {Array<Object>} errors - Array of error objects (e.g., fetched from Firestore).
+ */
+function renderErrorLog(errors) {
+    if (!errorLogTableBody) return;
+
+    errorLogTableBody.innerHTML = ''; // Clear existing rows
+
+    if (errors.length === 0) {
+        errorLogTableBody.innerHTML = '<tr><td colspan="3">No recent errors logged in-app. Check Firebase Console > Crashlytics/Cloud Logging for more details.</td></tr>';
+        return;
+    }
+
+    // Example rendering if you had an errors collection:
+    errors.forEach(error => {
+        const row = errorLogTableBody.insertRow();
+        row.insertCell().textContent = error.timestamp ? new Date(error.timestamp).toLocaleString() : 'N/A';
+        row.insertCell().textContent = error.type || 'N/A';
+        row.insertCell().textContent = error.message || 'N/A';
+    });
+}
+
+// Event listener for refreshing usage metrics
+if (refreshUsageMetricsButton) {
+    refreshUsageMetricsButton.addEventListener('click', updateFirebaseUsageMetrics);
+}
+
+
 // --- NEW: Tab Switching Logic ---
 
 /**
@@ -1472,7 +1562,15 @@ tabButtons.forEach(button => {
 
         // Show corresponding tab pane
         const targetTabId = button.dataset.tab;
-        document.getElementById(targetTabId)?.classList.add('active');
+        const activePane = document.getElementById(targetTabId);
+        if (activePane) {
+            activePane.classList.add('active');
+        }
+
+        // Specifically update usage metrics if the "API Usage & System Health" tab is activated
+        if (targetTabId === 'apiUsageAndHealthTab') {
+            updateFirebaseUsageMetrics();
+        }
     });
 });
 
@@ -1496,6 +1594,7 @@ onAuthStateChanged(auth, async (user) => {
                     fetchAllUsers(); 
                     setupRidesLiveMonitoring(); 
                     setupAnnouncementsLiveMonitoring(); // NEW: Start announcements monitoring
+                    
                     // Set default date range for analytics to past 30 days
                     const today = new Date();
                     const thirtyDaysAgo = new Date(today);
@@ -1504,6 +1603,10 @@ onAuthStateChanged(auth, async (user) => {
                     analyticsEndDate.value = today.toISOString().split('T')[0];
                     analyticsStartDate.value = thirtyDaysAgo.toISOString().split('T')[0];
                     updateAnalyticsCharts(); // Initial chart render
+
+                    // Initially display the "User Account Management" tab
+                    document.getElementById('userManagementTab')?.classList.add('active');
+                    document.querySelector('.tab-button[data-tab="userManagementTab"]')?.classList.add('active');
                 }
 
             } else {
