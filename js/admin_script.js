@@ -174,6 +174,12 @@ if (adminLogoutButton) {
                 unsubscribeAnnouncementsSnapshot();
                 unsubscribeAnnouncementsSnapshot = null;
             }
+            // Destroy all chart instances on logout
+            if (userSignupsChartInstance) { userSignupsChartInstance.destroy(); userSignupsChartInstance = null; }
+            if (ridesStatusChartInstance) { ridesStatusChartInstance.destroy(); ridesStatusChartInstance = null; }
+            if (ridesOfferedCompletedChartInstance) { ridesOfferedCompletedChartInstance.destroy(); ridesOfferedCompletedChartInstance = null; }
+            if (popularRoutesChartInstance) { popularRoutesChartInstance.destroy(); popularRoutesChartInstance = null; }
+
             sessionStorage.removeItem('currentUserRole');
             sessionStorage.removeItem('isAdmin');
             window.location.href = 'index.html'; 
@@ -203,8 +209,8 @@ async function fetchAllUsers() {
         });
         currentUserPage = 1; 
         applyUserFiltersAndSort(); 
-        updateAnalyticsCharts(); // NEW: Refresh analytics charts after user data is fetched
-        updateFirebaseUsageMetrics(); // NEW: Update usage metrics after fetching users
+        updateAnalyticsCharts(); // Refresh analytics charts after user data is fetched
+        updateFirebaseUsageMetrics(); // Update usage metrics after fetching users
     } catch (error) {
         console.error("Error fetching users:", error);
         usersTableBody.innerHTML = '<tr><td colspan="9" class="error-message">Error loading users. Please try again.</td></tr>'; 
@@ -639,8 +645,8 @@ async function setupRidesLiveMonitoring() {
             });
             currentRidePage = 1; 
             applyRideFiltersAndSort();
-            updateAnalyticsCharts(); // NEW: Refresh analytics charts after ride data is fetched
-            updateFirebaseUsageMetrics(); // NEW: Update usage metrics after fetching rides
+            updateAnalyticsCharts(); // Refresh analytics charts after ride data is fetched
+            updateFirebaseUsageMetrics(); // Update usage metrics after fetching rides
         }, (error) => {
             console.error("Error setting up live rides monitoring:", error);
             ridesTableBody.innerHTML = '<tr><td colspan="12" class="error-message">Error loading rides. Live monitoring failed.</td></tr>'; 
@@ -1099,6 +1105,7 @@ function renderUserSignupsChart(users) {
 
     if (userSignupsChartInstance) {
         userSignupsChartInstance.destroy();
+        userSignupsChartInstance = null; // Explicitly nullify after destruction
     }
 
     userSignupsChartInstance = new Chart(userSignupsChartCanvas, {
@@ -1172,6 +1179,7 @@ function renderRidesStatusChart(rides) {
 
     if (ridesStatusChartInstance) {
         ridesStatusChartInstance.destroy();
+        ridesStatusChartInstance = null; // Explicitly nullify after destruction
     }
 
     ridesStatusChartInstance = new Chart(ridesStatusChartCanvas, {
@@ -1235,6 +1243,7 @@ function renderRidesOfferedCompletedChart(rides) {
 
     if (ridesOfferedCompletedChartInstance) {
         ridesOfferedCompletedChartInstance.destroy();
+        ridesOfferedCompletedChartInstance = null; // Explicitly nullify after destruction
     }
 
     ridesOfferedCompletedChartInstance = new Chart(ridesOfferedCompletedChartCanvas, {
@@ -1320,6 +1329,7 @@ function renderPopularRoutesChart(rides) {
 
     if (popularRoutesChartInstance) {
         popularRoutesChartInstance.destroy();
+        popularRoutesChartInstance = null; // Explicitly nullify after destruction
     }
 
     popularRoutesChartInstance = new Chart(popularRoutesChartCanvas, {
@@ -1571,6 +1581,10 @@ tabButtons.forEach(button => {
         if (targetTabId === 'apiUsageAndHealthTab') {
             updateFirebaseUsageMetrics();
         }
+        // Also ensure charts are updated when a tab is activated that contains them (Analytics tab)
+        if (targetTabId === 'analyticsTab') {
+            updateAnalyticsCharts();
+        }
     });
 });
 
@@ -1591,22 +1605,25 @@ onAuthStateChanged(auth, async (user) => {
 
                 if (window.location.pathname.includes('admin_dashboard.html')) {
                     populateRoleSelector(); 
-                    fetchAllUsers(); 
-                    setupRidesLiveMonitoring(); 
-                    setupAnnouncementsLiveMonitoring(); // NEW: Start announcements monitoring
                     
                     // Set default date range for analytics to past 30 days
                     const today = new Date();
                     const thirtyDaysAgo = new Date(today);
                     thirtyDaysAgo.setDate(today.getDate() - 30);
-
                     analyticsEndDate.value = today.toISOString().split('T')[0];
                     analyticsStartDate.value = thirtyDaysAgo.toISOString().split('T')[0];
-                    updateAnalyticsCharts(); // Initial chart render
-
-                    // Initially display the "User Account Management" tab
+                    
+                    // IMPORTANT: Activate the default tab *before* fetching and rendering data
+                    // to ensure elements are visible for rendering.
                     document.getElementById('userManagementTab')?.classList.add('active');
                     document.querySelector('.tab-button[data-tab="userManagementTab"]')?.classList.add('active');
+
+                    fetchAllUsers(); // This will trigger analytics chart updates
+                    setupRidesLiveMonitoring(); 
+                    setupAnnouncementsLiveMonitoring(); 
+                    
+                    // Initial chart render will be handled by fetchAllUsers and setupRidesLiveMonitoring
+                    // No need for an extra updateAnalyticsCharts() call here.
                 }
 
             } else {
