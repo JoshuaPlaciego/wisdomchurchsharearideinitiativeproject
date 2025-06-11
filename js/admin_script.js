@@ -134,6 +134,10 @@ const announcementLogTableBody = document.querySelector('#announcementLogTable t
 
 let unsubscribeAnnouncementsSnapshot = null;
 
+// --- NEW: Tab Elements ---
+const tabButtons = document.querySelectorAll('.tab-button');
+const tabPanes = document.querySelectorAll('.tab-pane');
+
 
 // --- General Modal Close Buttons ---
 document.querySelectorAll('.close-button').forEach(button => {
@@ -1450,6 +1454,27 @@ if (sendAnnouncementButton) {
         }
     });
 }
+
+
+// --- NEW: Tab Switching Logic ---
+
+/**
+ * Handles clicks on tab buttons to switch active tab.
+ */
+tabButtons.forEach(button => {
+    button.addEventListener('click', () => {
+        // Deactivate current active tab and pane
+        document.querySelector('.tab-button.active')?.classList.remove('active');
+        document.querySelector('.tab-pane.active')?.classList.remove('active');
+
+        // Activate clicked tab button
+        button.classList.add('active');
+
+        // Show corresponding tab pane
+        const targetTabId = button.dataset.tab;
+        document.getElementById(targetTabId)?.classList.add('active');
+    });
+});
 
 
 // --- Admin Route Protection & Initialization ---

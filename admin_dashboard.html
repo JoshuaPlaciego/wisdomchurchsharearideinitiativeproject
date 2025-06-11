@@ -132,228 +132,243 @@
     </header>
 
     <main class="admin-main">
+        <div class="tab-controls">
+            <button class="tab-button active" data-tab="userManagement">User Account Management</button>
+            <button class="tab-button" data-tab="ridesOverview">Rides Overview & Management</button>
+            <button class="tab-button" data-tab="analyticsDashboard">Analytics & Statistics</button>
+            <button class="tab-button" data-tab="notificationsConfig">Notifications & Alerts</button>
+        </div>
+
         <!-- User Account Management Section -->
-        <section class="admin-section">
-            <h2>User Account Management</h2>
-            <p>Review and approve user accounts. Only users with 'Awaiting Email Verification' or 'Awaiting Admin Approval' are shown by default.</p>
-            <p class="admin-note">Note: Admin roles are assigned manually by the developer using the Firebase CLI or Admin SDK for security and cost control.</p>
+        <div id="userManagement" class="tab-pane active">
+            <section class="admin-section">
+                <h2>User Account Management</h2>
+                <p>Review and approve user accounts. Only users with 'Awaiting Email Verification' or 'Awaiting Admin Approval' are shown by default.</p>
+                <p class="admin-note">Note: Admin roles are assigned manually by the developer using the Firebase CLI or Admin SDK for security and cost control.</p>
 
-            <div class="filter-controls">
-                <div class="filter-group">
-                    <label for="statusFilter">Show Status:</label>
-                    <select id="statusFilter">
-                        <option value="Awaiting Admin Approval">Awaiting Admin Approval</option>
-                        <option value="Awaiting Email Verification">Awaiting Email Verification</option>
-                        <option value="Access Granted">Access Granted</option>
-                        <option value="Rejected">Rejected</option>
-                        <option value="Suspended">Suspended</option>
-                        <option value="All">All Users</option>
-                    </select>
+                <div class="filter-controls">
+                    <div class="filter-group">
+                        <label for="statusFilter">Show Status:</label>
+                        <select id="statusFilter">
+                            <option value="Awaiting Admin Approval">Awaiting Admin Approval</option>
+                            <option value="Awaiting Email Verification">Awaiting Email Verification</option>
+                            <option value="Access Granted">Access Granted</option>
+                            <option value="Rejected">Rejected</option>
+                            <option value="Suspended">Suspended</option>
+                            <option value="All">All Users</option>
+                        </select>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label for="roleFilter">Filter by Role:</label>
+                        <select id="roleFilter">
+                            <option value="All">All Roles</option>
+                            <option value="driver">Driver</option>
+                            <option value="passenger">Passenger</option>
+                            <option value="hybrid">Hybrid</option>
+                        </select>
+                    </div>
+
+                    <div class="filter-group search-group">
+                        <label for="userSearch">Search:</label>
+                        <input type="text" id="userSearch" placeholder="Email, Name, Mobile...">
+                    </div>
+
+                    <button id="refreshUsersButton">Refresh Users</button>
+                    <button id="exportCsvButton">Export Users CSV</button>
                 </div>
-                
-                <div class="filter-group">
-                    <label for="roleFilter">Filter by Role:</label>
-                    <select id="roleFilter">
-                        <option value="All">All Roles</option>
-                        <option value="driver">Driver</option>
-                        <option value="passenger">Passenger</option>
-                        <option value="hybrid">Hybrid</option>
-                    </select>
+
+                <div class="users-table-container">
+                    <table id="usersTable">
+                        <thead>
+                            <tr>
+                                <th data-sort-key="email">Email</th>
+                                <th data-sort-key="firstName">First Name</th>
+                                <th data-sort-key="lastName">Last Name</th>
+                                <th data-sort-key="mobile">Mobile</th> 
+                                <th data-sort-key="gender">Gender</th> 
+                                <th data-sort-key="role">Role</th>
+                                <th data-sort-key="accountStatus">Status</th>
+                                <th data-sort-key="createdAt">Registered On</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- User data will be loaded here by JavaScript -->
+                            <tr><td colspan="9">Loading users...</td></tr> 
+                        </tbody>
+                    </table>
                 </div>
 
-                <div class="filter-group search-group">
-                    <label for="userSearch">Search:</label>
-                    <input type="text" id="userSearch" placeholder="Email, Name, Mobile...">
+                <div class="pagination-controls">
+                    <button id="prevPageButton" disabled>&laquo; Prev</button>
+                    <span id="pageInfo">Page 1 of 1</span>
+                    <button id="nextPageButton" disabled>Next &raquo;</button>
+                    <div class="items-per-page">
+                        Items per page:
+                        <select id="itemsPerPageSelect">
+                            <option value="10">10</option>
+                            <option value="20">20</option>
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                        </select>
+                    </div>
                 </div>
-
-                <button id="refreshUsersButton">Refresh Users</button>
-                <button id="exportCsvButton">Export Users CSV</button>
-            </div>
-
-            <div class="users-table-container">
-                <table id="usersTable">
-                    <thead>
-                        <tr>
-                            <th data-sort-key="email">Email</th>
-                            <th data-sort-key="firstName">First Name</th>
-                            <th data-sort-key="lastName">Last Name</th>
-                            <th data-sort-key="mobile">Mobile</th> 
-                            <th data-sort-key="gender">Gender</th> 
-                            <th data-sort-key="role">Role</th>
-                            <th data-sort-key="accountStatus">Status</th>
-                            <th data-sort-key="createdAt">Registered On</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <!-- User data will be loaded here by JavaScript -->
-                        <tr><td colspan="9">Loading users...</td></tr> 
-                    </tbody>
-                </table>
-            </div>
-
-            <div class="pagination-controls">
-                <button id="prevPageButton" disabled>&laquo; Prev</button>
-                <span id="pageInfo">Page 1 of 1</span>
-                <button id="nextPageButton" disabled>Next &raquo;</button>
-                <div class="items-per-page">
-                    Items per page:
-                    <select id="itemsPerPageSelect">
-                        <option value="10">10</option>
-                        <option value="20">20</option>
-                        <option value="50">50</option>
-                        <option value="100">100</option>
-                    </select>
-                </div>
-            </div>
-        </section>
+            </section>
+        </div>
 
         <!-- Rides Overview & Management Section -->
-        <section class="admin-section">
-            <h2>Rides Overview & Management</h2>
-            <p>Monitor offered, booked, completed, and cancelled rides.</p>
+        <div id="ridesOverview" class="tab-pane">
+            <section class="admin-section">
+                <h2>Rides Overview & Management</h2>
+                <p>Monitor offered, booked, completed, and cancelled rides.</p>
 
-            <div class="filter-controls">
-                <div class="filter-group">
-                    <label for="rideStatusFilter">Show Ride Status:</label>
-                    <select id="rideStatusFilter">
-                        <option value="All">All Statuses</option>
-                        <option value="Offered">Offered</option>
-                        <option value="Booked">Booked</option>
-                        <option value="Completed">Completed</option>
-                        <option value="Cancelled">Cancelled</option>
-                    </select>
+                <div class="filter-controls">
+                    <div class="filter-group">
+                        <label for="rideStatusFilter">Show Ride Status:</label>
+                        <select id="rideStatusFilter">
+                            <option value="All">All Statuses</option>
+                            <option value="Offered">Offered</option>
+                            <option value="Booked">Booked</option>
+                            <option value="Completed">Completed</option>
+                            <option value="Cancelled">Cancelled</option>
+                        </select>
+                    </div>
+                    <div class="filter-group search-group">
+                        <label for="rideSearch">Search Rides:</label>
+                        <input type="text" id="rideSearch" placeholder="Driver/Passenger Email, Location...">
+                    </div>
+                    <button id="refreshRidesButton">Refresh Rides</button>
+                    <button id="exportRidesCsvButton">Export Rides CSV</button>
                 </div>
-                <div class="filter-group search-group">
-                    <label for="rideSearch">Search Rides:</label>
-                    <input type="text" id="rideSearch" placeholder="Driver/Passenger Email, Location...">
-                </div>
-                <button id="refreshRidesButton">Refresh Rides</button>
-                <button id="exportRidesCsvButton">Export Rides CSV</button>
-            </div>
 
-            <div class="rides-table-container users-table-container"> <!-- Reusing some styles -->
-                <table id="ridesTable">
-                    <thead>
-                        <tr>
-                            <th data-sort-key="rideId">Ride ID</th>
-                            <th data-sort-key="driverEmail">Driver Email</th>
-                            <th data-sort-key="passengerEmails">Passenger(s) Email</th>
-                            <th data-sort-key="numBookedRiders">Booked Riders</th> 
-                            <th data-sort-key="startLocation">Start Location</th>
-                            <th data-sort-key="endLocation">End Location</th>
-                            <th data-sort-key="rideDate">Date</th>
-                            <th data-sort-key="rideTime">Time</th>
-                            <th data-sort-key="availableSeats">Seats</th>
-                            <th data-sort-key="status">Status</th>
-                            <th data-sort-key="createdAt">Created On</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <!-- Ride data will be loaded here by JavaScript -->
-                        <tr><td colspan="12">No ride data available.</td></tr> 
-                    </tbody>
-                </table>
-            </div>
-
-            <div class="pagination-controls">
-                <button id="prevRidePageButton" disabled>&laquo; Prev</button>
-                <span id="ridePageInfo">Page 1 of 1</span>
-                <button id="nextRidePageButton" disabled>Next &raquo;</button>
-                <div class="items-per-page">
-                    Rides per page:
-                    <select id="ridesPerPageSelect">
-                        <option value="10">10</option>
-                        <option value="20">20</option>
-                        <option value="50">50</option>
-                        <option value="100">100</option>
-                    </select>
+                <div class="rides-table-container users-table-container"> <!-- Reusing some styles -->
+                    <table id="ridesTable">
+                        <thead>
+                            <tr>
+                                <th data-sort-key="rideId">Ride ID</th>
+                                <th data-sort-key="driverEmail">Driver Email</th>
+                                <th data-sort-key="passengerEmails">Passenger(s) Email</th>
+                                <th data-sort-key="numBookedRiders">Booked Riders</th> 
+                                <th data-sort-key="startLocation">Start Location</th>
+                                <th data-sort-key="endLocation">End Location</th>
+                                <th data-sort-key="rideDate">Date</th>
+                                <th data-sort-key="rideTime">Time</th>
+                                <th data-sort-key="availableSeats">Seats</th>
+                                <th data-sort-key="status">Status</th>
+                                <th data-sort-key="createdAt">Created On</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Ride data will be loaded here by JavaScript -->
+                            <tr><td colspan="12">No ride data available.</td></tr> 
+                        </tbody>
+                    </table>
                 </div>
-            </div>
-        </section>
+
+                <div class="pagination-controls">
+                    <button id="prevRidePageButton" disabled>&laquo; Prev</button>
+                    <span id="ridePageInfo">Page 1 of 1</span>
+                    <button id="nextRidePageButton" disabled>Next &raquo;</button>
+                    <div class="items-per-page">
+                        Rides per page:
+                        <select id="ridesPerPageSelect">
+                            <option value="10">10</option>
+                            <option value="20">20</option>
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                        </select>
+                    </div>
+                </div>
+            </section>
+        </div>
 
         <!-- NEW: Analytics & Statistics Dashboard Section -->
-        <section class="admin-section">
-            <h2>Analytics & Statistics Dashboard</h2>
-            <p>Visualize platform usage trends and key metrics.</p>
+        <div id="analyticsDashboard" class="tab-pane">
+            <section class="admin-section">
+                <h2>Analytics & Statistics Dashboard</h2>
+                <p>Visualize platform usage trends and key metrics.</p>
 
-            <div class="filter-controls analytics-controls">
-                <div class="filter-group">
-                    <label for="analyticsStartDate">From:</label>
-                    <input type="date" id="analyticsStartDate">
+                <div class="filter-controls analytics-controls">
+                    <div class="filter-group">
+                        <label for="analyticsStartDate">From:</label>
+                        <input type="date" id="analyticsStartDate">
+                    </div>
+                    <div class="filter-group">
+                        <label for="analyticsEndDate">To:</label>
+                        <input type="date" id="analyticsEndDate">
+                    </div>
+                    <button id="applyAnalyticsFilterButton">Apply Filter</button>
                 </div>
-                <div class="filter-group">
-                    <label for="analyticsEndDate">To:</label>
-                    <input type="date" id="analyticsEndDate">
-                </div>
-                <button id="applyAnalyticsFilterButton">Apply Filter</button>
-            </div>
 
-            <div class="analytics-charts-container">
-                <div class="chart-card">
-                    <h3>New User Sign-ups</h3>
-                    <canvas id="userSignupsChart"></canvas>
+                <div class="analytics-charts-container">
+                    <div class="chart-card">
+                        <h3>New User Sign-ups</h3>
+                        <canvas id="userSignupsChart"></canvas>
+                    </div>
+                    <div class="chart-card">
+                        <h3>Rides Status Distribution</h3>
+                        <canvas id="ridesStatusChart"></canvas>
+                    </div>
+                    <div class="chart-card">
+                        <h3>Rides Offered vs. Completed</h3>
+                        <canvas id="ridesOfferedCompletedChart"></canvas>
+                    </div>
+                    <div class="chart-card">
+                        <h3>Top 5 Most Popular Routes</h3>
+                        <canvas id="popularRoutesChart"></canvas>
+                    </div>
                 </div>
-                <div class="chart-card">
-                    <h3>Rides Status Distribution</h3>
-                    <canvas id="ridesStatusChart"></canvas>
-                </div>
-                <div class="chart-card">
-                    <h3>Rides Offered vs. Completed</h3>
-                    <canvas id="ridesOfferedCompletedChart"></canvas>
-                </div>
-                <div class="chart-card">
-                    <h3>Top 5 Most Popular Routes</h3>
-                    <canvas id="popularRoutesChart"></canvas>
-                </div>
-            </div>
-        </section>
+            </section>
+        </div>
 
         <!-- NEW: Notifications & Alerts Configuration Section -->
-        <section class="admin-section">
-            <h2>Notifications & Alerts Configuration</h2>
-            <p>Manage in-app notification templates and send custom announcements.</p>
+        <div id="notificationsConfig" class="tab-pane">
+            <section class="admin-section">
+                <h2>Notifications & Alerts Configuration</h2>
+                <p>Manage in-app notification templates and send custom announcements.</p>
 
-            <div class="notification-config-container">
-                <h3>Create New In-App Announcement</h3>
-                <div class="form-group">
-                    <label for="notificationAudience">Audience:</label>
-                    <select id="notificationAudience">
-                        <option value="all">All Users</option>
-                        <option value="drivers">All Drivers</option>
-                        <option value="passengers">All Passengers</option>
-                    </select>
+                <div class="notification-config-container">
+                    <h3>Create New In-App Announcement</h3>
+                    <div class="form-group">
+                        <label for="notificationAudience">Audience:</label>
+                        <select id="notificationAudience">
+                            <option value="all">All Users</option>
+                            <option value="drivers">All Drivers</option>
+                            <option value="passengers">All Passengers</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="notificationTitle">Title:</label>
+                        <input type="text" id="notificationTitle" placeholder="e.g., Important Update!">
+                    </div>
+                    <div class="form-group">
+                        <label for="notificationMessage">Message:</label>
+                        <textarea id="notificationMessage" rows="5" placeholder="Enter your announcement message here..."></textarea>
+                    </div>
+                    <button id="sendAnnouncementButton">Send Announcement (In-App)</button>
                 </div>
-                <div class="form-group">
-                    <label for="notificationTitle">Title:</label>
-                    <input type="text" id="notificationTitle" placeholder="e.g., Important Update!">
-                </div>
-                <div class="form-group">
-                    <label for="notificationMessage">Message:</label>
-                    <textarea id="notificationMessage" rows="5" placeholder="Enter your announcement message here..."></textarea>
-                </div>
-                <button id="sendAnnouncementButton">Send Announcement (In-App)</button>
-            </div>
 
-            <div class="notification-log-container">
-                <h3>Recent Announcements</h3>
-                <table id="announcementLogTable">
-                    <thead>
-                        <tr>
-                            <th>Timestamp</th>
-                            <th>Audience</th>
-                            <th>Title</th>
-                            <th>Message</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <!-- Recent announcements will be loaded here by JavaScript -->
-                        <tr><td colspan="4">No recent announcements.</td></tr>
-                    </tbody>
-                </table>
-            </div>
-        </section>
+                <div class="notification-log-container">
+                    <h3>Recent Announcements</h3>
+                    <table id="announcementLogTable">
+                        <thead>
+                            <tr>
+                                <th>Timestamp</th>
+                                <th>Audience</th>
+                                <th>Title</th>
+                                <th>Message</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Recent announcements will be loaded here by JavaScript -->
+                            <tr><td colspan="4">No recent announcements.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
 
     </main>
 
