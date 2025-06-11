@@ -842,6 +842,124 @@
     display: block; /* Show active tab content */
 }
 
+/* NEW: Usage Metrics Grid */
+.usage-metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 25px; /* Spacing between metric cards */
+    margin-top: 30px;
+    margin-bottom: 30px; /* Space before buttons/link */
+}
+
+.metric-card {
+    background-color: #202631; /* Slightly lighter dark for cards */
+    padding: 25px;
+    border-radius: 10px;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+    border: 1px solid #4a5568;
+    text-align: center;
+}
+
+.metric-card h3 {
+    color: #e2e8f0;
+    margin-bottom: 15px;
+    font-size: 1.3rem;
+    font-weight: 600;
+}
+
+.metric-card p {
+    font-size: 1.8rem; /* Larger font for counts */
+    font-weight: 700;
+    color: #4299e1; /* Techy blue for numbers */
+    margin: 0;
+}
+
+/* Reusable button style for admin actions */
+.admin-button {
+    background-color: #4299e1; /* Techy blue */
+    color: white;
+    border: none;
+    padding: 12px 25px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1.05rem;
+    font-weight: 600;
+    transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
+    box-shadow: 0 3px 6px rgba(0,0,0,0.3);
+    text-decoration: none; /* For links */
+    display: inline-block; /* For links/buttons to sit next to each other */
+}
+
+.admin-button:hover {
+    background-color: #3182ce;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 10px rgba(0,0,0,0.4);
+}
+
+.text-center {
+    text-align: center;
+}
+
+.mt-5 {
+    margin-top: 40px; /* Increased margin */
+}
+
+.ml-3 {
+    margin-left: 15px; /* Margin for buttons */
+}
+
+/* Error Log Table Styles (can reuse existing table styles, but explicitly ensure container is scrollable) */
+.error-log-container {
+    background-color: #202631; /* Same as metric cards */
+    padding: 25px;
+    border-radius: 10px;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+    border: 1px solid #4a5568;
+    overflow-x: auto; /* Enable horizontal scrolling for the table */
+}
+
+#errorLogTable {
+    width: 100%;
+    border-collapse: separate; 
+    border-spacing: 0;
+    margin-top: 15px;
+    font-size: 0.95rem;
+}
+
+#errorLogTable th,
+#errorLogTable td {
+    border: none; 
+    padding: 12px 10px; 
+    text-align: left;
+    vertical-align: top; /* Align text to top for multi-line messages */
+    background-color: #202631;
+    color: #e2e8f0;
+    border-bottom: 1px solid #2d3748;
+}
+
+#errorLogTable th {
+    background-color: #2d3748;
+    font-weight: bold;
+    color: #4299e1;
+    border-bottom: 2px solid #4299e1;
+}
+
+/* Rounded corners for first/last header cells */
+#errorLogTable thead tr th:first-child { border-top-left-radius: 8px; }
+#errorLogTable thead tr th:last-child { border-top-right-radius: 8px; }
+
+/* Rounded corners for first/last body cells */
+#errorLogTable tbody tr:last-child td:first-child { border-bottom-left-radius: 8px; }
+#errorLogTable tbody tr:last-child td:last-child { border-bottom-right-radius: 8px; }
+
+#errorLogTable tbody tr:nth-child(even) {
+    background-color: #1a202c; /* Alternate row color */
+}
+
+#errorLogTable tbody tr:hover {
+    background-color: #2d3748;
+}
+
 
 /* Responsive adjustments */
 @media (max-width: 768px) {
@@ -953,5 +1071,16 @@
         padding: 10px 15px; /* Adjust padding */
         text-align: center;
         flex-grow: 1; /* Allow them to grow if needed */
+    }
+
+    /* Responsive adjustments for new sections */
+    .usage-metrics-grid {
+        grid-template-columns: 1fr; /* Stack on small screens */
+    }
+    .admin-button {
+        display: block;
+        width: 100%;
+        margin-left: 0;
+        margin-bottom: 10px; /* Space between stacked buttons/links */
     }
 }

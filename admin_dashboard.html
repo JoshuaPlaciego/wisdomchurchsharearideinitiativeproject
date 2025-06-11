@@ -4,123 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard - Share A Ride</title>
-    <!-- Link to your existing main CSS for general styling -->
-    <link rel="stylesheet" href="css/style.css">
-    <!-- Link to the new admin specific CSS -->
     <link rel="stylesheet" href="css/admin_style.css">
-    <!-- Chart.js for analytics -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Chart.js for analytics charts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.js"></script>
 </head>
 <body>
-    <!-- Global Notification Message Box (reused from index.html) -->
+    <!-- Global Notification Message Box -->
     <div id="notificationMessageBox" class="global-message-box"></div>
-
-    <!-- Custom Confirmation Modal (for Approve/Reject/Suspend/Activate) -->
-    <div id="confirmationModal" class="modal">
-        <div class="modal-content">
-            <span class="close-button" data-modal-id="confirmationModal">&times;</span>
-            <div class="modal-header-fixed">
-                <h2>Confirm Action</h2>
-            </div>
-            <div class="modal-body-scrollable">
-                <p id="confirmationMessage"></p>
-                <div class="button-group">
-                    <button id="confirmActionButton" class="confirm-button">Confirm</button>
-                    <button id="cancelActionButton" class="cancel-button">Cancel</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- User Detail View Modal -->
-    <div id="userDetailModal" class="modal">
-        <div class="modal-content">
-            <span class="close-button" data-modal-id="userDetailModal">&times;</span>
-            <div class="modal-header-fixed">
-                <h2>User Details</h2>
-            </div>
-            <div class="modal-body-scrollable user-details-grid">
-                <p><strong>UID:</strong> <span id="detailUid"></span></p>
-                <p><strong>Email:</strong> <a id="detailEmail" href="#" target="_blank"></a></p>
-                <p><strong>First Name:</strong> <span id="detailFirstName"></span></p>
-                <p><strong>Last Name:</strong> <span id="detailLastName"></span></p>
-                <p><strong>Mobile:</strong> <a id="detailMobile" href="#"></a></p>
-                <p><strong>Gender:</strong> <span id="detailGender"></span></p>
-                <p><strong>Facebook:</strong> <a id="detailFacebook" href="#" target="_blank"></a></p>
-                <p><strong>Role:</strong> <span id="detailRole"></span></p>
-                <p><strong>City:</strong> <span id="detailCity"></span></p>
-                <p><strong>Account Status:</strong> <span id="detailAccountStatus"></span></p>
-                <p><strong>Registered On:</strong> <span id="detailCreatedAt"></span></p>
-                <p><strong>Last Updated:</strong> <span id="detailUpdatedAt"></span></p>
-
-                <div class="user-detail-actions">
-                    <button id="suspendUserButton" class="suspend-button">Suspend Account</button>
-                    <button id="activateUserButton" class="approve-button">Activate Account</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Ride Booked Riders List Modal -->
-    <div id="rideBookedRidersModal" class="modal">
-        <div class="modal-content">
-            <span class="close-button" data-modal-id="rideBookedRidersModal">&times;</span>
-            <div class="modal-header-fixed">
-                <h2>Riders for Ride ID: <span id="bookedRidersRideId"></span></h2>
-            </div>
-            <div class="modal-body-scrollable">
-                <p id="bookedRidersCountInfo">Total Booked: 0</p>
-                <table id="bookedRidersTable">
-                    <thead>
-                        <tr>
-                            <th>Email</th>
-                            <th>Name</th>
-                            <th>Mobile</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <!-- Booked rider data will be loaded here by JavaScript -->
-                    </tbody>
-                </table>
-                <p id="noBookedRidersMessage" style="text-align: center; font-style: italic; color: #777; margin-top: 15px; display: none;">No riders have booked this ride yet.</p>
-            </div>
-        </div>
-    </div>
-
-    <!-- Passenger Ride History Modal -->
-    <div id="passengerRidesModal" class="modal">
-        <div class="modal-content">
-            <span class="close-button" data-modal-id="passengerRidesModal">&times;</span>
-            <div class="modal-header-fixed">
-                <h2>Ride History for: <span id="passengerHistoryEmail"></span></h2>
-            </div>
-            <div class="modal-body-scrollable">
-                <table id="passengerRidesTable">
-                    <thead>
-                        <tr>
-                            <th>Ride ID</th>
-                            <th>Driver Email</th>
-                            <th>Start Location</th>
-                            <th>End Location</th>
-                            <th>Date</th>
-                            <th>Time</th>
-                            <th>Status</th>
-                            <th>Created On</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <!-- Passenger's ride data will be loaded here by JavaScript -->
-                    </tbody>
-                </table>
-                <p id="noPassengerRidesMessage" style="text-align: center; font-style: italic; color: #777; margin-top: 15px; display: none;">No rides found for this passenger.</p>
-            </div>
-        </div>
-    </div>
 
     <header class="admin-header">
         <h1>Admin Dashboard</h1>
         <nav>
-            <!-- Role Selection Dropdown -->
             <div class="role-selector-container">
                 <select id="roleSelector" class="role-selector">
                     <option value="">Switch Role</option>
@@ -132,50 +26,51 @@
     </header>
 
     <main class="admin-main">
+        <!-- Tab Controls -->
         <div class="tab-controls">
-            <button class="tab-button active" data-tab="userManagement">User Account Management</button>
-            <button class="tab-button" data-tab="ridesOverview">Rides Overview & Management</button>
-            <button class="tab-button" data-tab="analyticsDashboard">Analytics & Statistics</button>
-            <button class="tab-button" data-tab="notificationsConfig">Notifications & Alerts</button>
+            <button class="tab-button" data-tab="userManagementTab">User Account Management</button>
+            <button class="tab-button" data-tab="ridesMonitoringTab">Rides Overview & Management</button>
+            <button class="tab-button" data-tab="analyticsTab">Analytics & Statistics Dashboard</button>
+            <button class="tab-button" data-tab="notificationsTab">Notifications & Alerts Configuration</button>
+            <button class="tab-button" data-tab="apiUsageAndHealthTab">API Usage & System Health</button> <!-- NEW TAB BUTTON -->
         </div>
 
-        <!-- User Account Management Section -->
-        <div id="userManagement" class="tab-pane active">
+        <!-- Tab Content Panes -->
+        <div id="userManagementTab" class="tab-pane">
             <section class="admin-section">
                 <h2>User Account Management</h2>
-                <p>Review and approve user accounts. Only users with 'Awaiting Email Verification' or 'Awaiting Admin Approval' are shown by default.</p>
-                <p class="admin-note">Note: Admin roles are assigned manually by the developer using the Firebase CLI or Admin SDK for security and cost control.</p>
+                <p class="admin-note">
+                    Oversee all user accounts, including their registration status, roles, and activity.
+                    You can approve, reject, or suspend user access here.
+                </p>
 
                 <div class="filter-controls">
                     <div class="filter-group">
-                        <label for="statusFilter">Show Status:</label>
+                        <label for="statusFilter">Status:</label>
                         <select id="statusFilter">
-                            <option value="Awaiting Admin Approval">Awaiting Admin Approval</option>
+                            <option value="All">All</option>
                             <option value="Awaiting Email Verification">Awaiting Email Verification</option>
+                            <option value="Awaiting Admin Approval">Awaiting Admin Approval</option>
                             <option value="Access Granted">Access Granted</option>
-                            <option value="Rejected">Rejected</option>
                             <option value="Suspended">Suspended</option>
-                            <option value="All">All Users</option>
+                            <option value="Rejected">Rejected</option>
                         </select>
                     </div>
-                    
                     <div class="filter-group">
-                        <label for="roleFilter">Filter by Role:</label>
+                        <label for="roleFilter">Role:</label>
                         <select id="roleFilter">
-                            <option value="All">All Roles</option>
-                            <option value="driver">Driver</option>
+                            <option value="All">All</option>
                             <option value="passenger">Passenger</option>
+                            <option value="driver">Driver</option>
                             <option value="hybrid">Hybrid</option>
                         </select>
                     </div>
-
-                    <div class="filter-group search-group">
+                    <div class="filter-group">
                         <label for="userSearch">Search:</label>
-                        <input type="text" id="userSearch" placeholder="Email, Name, Mobile...">
+                        <input type="text" id="userSearch" placeholder="Search by email, name, mobile...">
                     </div>
-
                     <button id="refreshUsersButton">Refresh Users</button>
-                    <button id="exportCsvButton">Export Users CSV</button>
+                    <button id="exportCsvButton">Export to CSV</button>
                 </div>
 
                 <div class="users-table-container">
@@ -185,8 +80,8 @@
                                 <th data-sort-key="email">Email</th>
                                 <th data-sort-key="firstName">First Name</th>
                                 <th data-sort-key="lastName">Last Name</th>
-                                <th data-sort-key="mobile">Mobile</th> 
-                                <th data-sort-key="gender">Gender</th> 
+                                <th data-sort-key="mobile">Mobile</th>
+                                <th data-sort-key="gender">Gender</th>
                                 <th data-sort-key="role">Role</th>
                                 <th data-sort-key="accountStatus">Status</th>
                                 <th data-sort-key="createdAt">Registered On</th>
@@ -195,61 +90,62 @@
                         </thead>
                         <tbody>
                             <!-- User data will be loaded here by JavaScript -->
-                            <tr><td colspan="9">Loading users...</td></tr> 
+                            <tr><td colspan="9">Loading users...</td></tr>
                         </tbody>
                     </table>
                 </div>
 
                 <div class="pagination-controls">
-                    <button id="prevPageButton" disabled>&laquo; Prev</button>
-                    <span id="pageInfo">Page 1 of 1</span>
-                    <button id="nextPageButton" disabled>Next &raquo;</button>
+                    <button id="prevPageButton">Previous</button>
+                    <span id="pageInfo">Page 1 of 1 (0 users)</span>
+                    <button id="nextPageButton">Next</button>
                     <div class="items-per-page">
-                        Items per page:
+                        <span>Items per page:</span>
                         <select id="itemsPerPageSelect">
                             <option value="10">10</option>
-                            <option value="20">20</option>
+                            <option value="25">25</option>
                             <option value="50">50</option>
-                            <option value="100">100</option>
                         </select>
                     </div>
                 </div>
             </section>
         </div>
 
-        <!-- Rides Overview & Management Section -->
-        <div id="ridesOverview" class="tab-pane">
+        <div id="ridesMonitoringTab" class="tab-pane">
             <section class="admin-section">
                 <h2>Rides Overview & Management</h2>
-                <p>Monitor offered, booked, completed, and cancelled rides.</p>
+                <p class="admin-note">
+                    Monitor all active, completed, and cancelled rides. You can adjust ride statuses
+                    and view details of booked passengers for each ride.
+                </p>
 
                 <div class="filter-controls">
                     <div class="filter-group">
-                        <label for="rideStatusFilter">Show Ride Status:</label>
+                        <label for="rideStatusFilter">Status:</label>
                         <select id="rideStatusFilter">
-                            <option value="All">All Statuses</option>
+                            <option value="All">All</option>
                             <option value="Offered">Offered</option>
                             <option value="Booked">Booked</option>
                             <option value="Completed">Completed</option>
                             <option value="Cancelled">Cancelled</option>
                         </select>
                     </div>
-                    <div class="filter-group search-group">
-                        <label for="rideSearch">Search Rides:</label>
-                        <input type="text" id="rideSearch" placeholder="Driver/Passenger Email, Location...">
+                    <div class="filter-group">
+                        <label for="rideSearch">Search:</label>
+                        <input type="text" id="rideSearch" placeholder="Search by driver, location, passenger...">
                     </div>
                     <button id="refreshRidesButton">Refresh Rides</button>
-                    <button id="exportRidesCsvButton">Export Rides CSV</button>
+                    <button id="exportRidesCsvButton">Export to CSV</button>
                 </div>
 
-                <div class="rides-table-container users-table-container"> <!-- Reusing some styles -->
+                <div class="rides-table-container">
                     <table id="ridesTable">
                         <thead>
                             <tr>
-                                <th data-sort-key="rideId">Ride ID</th>
+                                <th data-sort-key="id">Ride ID</th>
                                 <th data-sort-key="driverEmail">Driver Email</th>
-                                <th data-sort-key="passengerEmails">Passenger(s) Email</th>
-                                <th data-sort-key="numBookedRiders">Booked Riders</th> 
+                                <th>Passenger(s) Email</th>
+                                <th data-sort-key="numBookedRiders">Booked</th>
                                 <th data-sort-key="startLocation">Start Location</th>
                                 <th data-sort-key="endLocation">End Location</th>
                                 <th data-sort-key="rideDate">Date</th>
@@ -262,41 +158,42 @@
                         </thead>
                         <tbody>
                             <!-- Ride data will be loaded here by JavaScript -->
-                            <tr><td colspan="12">No ride data available.</td></tr> 
+                            <tr><td colspan="12">Loading rides...</td></tr>
                         </tbody>
                     </table>
                 </div>
 
                 <div class="pagination-controls">
-                    <button id="prevRidePageButton" disabled>&laquo; Prev</button>
-                    <span id="ridePageInfo">Page 1 of 1</span>
-                    <button id="nextRidePageButton" disabled>Next &raquo;</button>
+                    <button id="prevRidePageButton">Previous</button>
+                    <span id="ridePageInfo">Page 1 of 1 (0 rides)</span>
+                    <button id="nextRidePageButton">Next</button>
                     <div class="items-per-page">
-                        Rides per page:
+                        <span>Items per page:</span>
                         <select id="ridesPerPageSelect">
                             <option value="10">10</option>
-                            <option value="20">20</option>
+                            <option value="25">25</option>
                             <option value="50">50</option>
-                            <option value="100">100</option>
                         </select>
                     </div>
                 </div>
             </section>
         </div>
 
-        <!-- NEW: Analytics & Statistics Dashboard Section -->
-        <div id="analyticsDashboard" class="tab-pane">
+        <div id="analyticsTab" class="tab-pane">
             <section class="admin-section">
                 <h2>Analytics & Statistics Dashboard</h2>
-                <p>Visualize platform usage trends and key metrics.</p>
+                <p class="admin-note">
+                    Visualize key metrics such as user sign-ups, ride statuses, and popular routes.
+                    Adjust the date range to analyze trends over specific periods.
+                </p>
 
-                <div class="filter-controls analytics-controls">
+                <div class="filter-controls">
                     <div class="filter-group">
-                        <label for="analyticsStartDate">From:</label>
+                        <label for="analyticsStartDate">Start Date:</label>
                         <input type="date" id="analyticsStartDate">
                     </div>
                     <div class="filter-group">
-                        <label for="analyticsEndDate">To:</label>
+                        <label for="analyticsEndDate">End Date:</label>
                         <input type="date" id="analyticsEndDate">
                     </div>
                     <button id="applyAnalyticsFilterButton">Apply Filter</button>
@@ -323,60 +220,218 @@
             </section>
         </div>
 
-        <!-- NEW: Notifications & Alerts Configuration Section -->
-        <div id="notificationsConfig" class="tab-pane">
-            <section class="admin-section">
-                <h2>Notifications & Alerts Configuration</h2>
-                <p>Manage in-app notification templates and send custom announcements.</p>
-
-                <div class="notification-config-container">
-                    <h3>Create New In-App Announcement</h3>
-                    <div class="form-group">
-                        <label for="notificationAudience">Audience:</label>
-                        <select id="notificationAudience">
-                            <option value="all">All Users</option>
-                            <option value="drivers">All Drivers</option>
-                            <option value="passengers">All Passengers</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="notificationTitle">Title:</label>
-                        <input type="text" id="notificationTitle" placeholder="e.g., Important Update!">
-                    </div>
-                    <div class="form-group">
-                        <label for="notificationMessage">Message:</label>
-                        <textarea id="notificationMessage" rows="5" placeholder="Enter your announcement message here..."></textarea>
-                    </div>
-                    <button id="sendAnnouncementButton">Send Announcement (In-App)</button>
+        <div id="notificationsTab" class="tab-pane">
+            <section class="admin-section notification-config-container">
+                <h2>Send Announcements</h2>
+                <p class="admin-note">
+                    Compose and send in-app announcements to specific user groups or all users.
+                </p>
+                <div class="form-group">
+                    <label for="notificationAudience">Audience:</label>
+                    <select id="notificationAudience">
+                        <option value="all">All Users</option>
+                        <option value="drivers">Drivers Only</option>
+                        <option value="passengers">Passengers Only</option>
+                    </select>
                 </div>
+                <div class="form-group">
+                    <label for="notificationTitle">Title:</label>
+                    <input type="text" id="notificationTitle" placeholder="e.g., Important Update, Maintenance Notice" required>
+                </div>
+                <div class="form-group">
+                    <label for="notificationMessage">Message:</label>
+                    <textarea id="notificationMessage" placeholder="Type your announcement message here..." required></textarea>
+                </div>
+                <button id="sendAnnouncementButton">Send Announcement</button>
+            </section>
 
-                <div class="notification-log-container">
-                    <h3>Recent Announcements</h3>
-                    <table id="announcementLogTable">
+            <section class="admin-section notification-log-container">
+                <h2>Recent Announcement Log</h2>
+                <p class="admin-note">
+                    Review a history of all announcements sent from this dashboard.
+                </p>
+                <table id="announcementLogTable">
+                    <thead>
+                        <tr>
+                            <th>Timestamp</th>
+                            <th>Audience</th>
+                            <th>Title</th>
+                            <th>Message</th>
+                        </tr>
+                    </thead>
+                    <tbody id="announcementLogTableBody">
+                        <!-- Announcement log entries will be populated by JavaScript -->
+                        <tr><td colspan="4">Loading announcements...</td></tr>
+                    </tbody>
+                </table>
+            </section>
+        </div>
+
+        <!-- NEW: API Usage & System Health Tab Pane -->
+        <div id="apiUsageAndHealthTab" class="tab-pane">
+            <section class="admin-section">
+                <h2>Firebase Usage Overview</h2>
+                <p class="admin-note">
+                    These metrics show the current number of documents in your primary Firestore collections.
+                    For precise API usage (reads, writes, deletes, authentication, storage, Cloud Functions) and
+                    detailed billing information to maintain your free tier, please refer to the
+                    **Firebase Console's "Usage & Billing"** section.
+                    Maintaining 0 cost depends heavily on efficient queries and staying within daily free limits.
+                </p>
+                <div class="usage-metrics-grid">
+                    <div class="metric-card">
+                        <h3>Users Collection</h3>
+                        <p id="usersCountDisplay">Loading...</p>
+                    </div>
+                    <div class="metric-card">
+                        <h3>Rides Collection</h3>
+                        <p id="ridesCountDisplay">Loading...</p>
+                    </div>
+                    <div class="metric-card">
+                        <h3>Announcements Collection</h3>
+                        <p id="announcementsCountDisplay">Loading...</p>
+                    </div>
+                </div>
+                <div class="text-center mt-5">
+                    <p>For comprehensive Firebase usage and billing details:</p>
+                    <a id="firebaseConsoleLink" href="#" target="_blank" class="admin-button">Go to Firebase Console</a>
+                    <button id="refreshUsageMetricsButton" class="admin-button ml-3">Refresh Metrics</button>
+                </div>
+            </section>
+
+            <section class="admin-section mt-5">
+                <h2>Recent Activity & Error Log (In-App)</h2>
+                <p class="admin-note">
+                    This table displays a placeholder for in-app client-side errors or activity logs
+                    that you might choose to store in Firestore. For comprehensive server-side logs
+                    (e.g., Cloud Functions errors, hosting logs) and detailed crash reporting,
+                    please refer to **Firebase Console > Cloud Logging & Crashlytics**.
+                </p>
+                <div class="error-log-container">
+                    <table id="errorLogTable">
                         <thead>
                             <tr>
                                 <th>Timestamp</th>
-                                <th>Audience</th>
-                                <th>Title</th>
+                                <th>Type</th>
                                 <th>Message</th>
                             </tr>
                         </thead>
-                        <tbody>
-                            <!-- Recent announcements will be loaded here by JavaScript -->
-                            <tr><td colspan="4">No recent announcements.</td></tr>
+                        <tbody id="errorLogTableBody">
+                            <!-- Error log entries will be populated by JavaScript (or display placeholder) -->
+                            <tr><td colspan="3">No recent errors logged in-app. Check Firebase Console > Crashlytics/Cloud Logging for more details.</td></tr>
                         </tbody>
                     </table>
                 </div>
             </section>
         </div>
-
     </main>
 
-    <!-- Import Firebase and Auth module -->
+    <!-- Modals (Confirmation, User Detail, Booked Riders, Passenger Rides) -->
+    <!-- Custom Confirmation Modal -->
+    <div id="confirmationModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button" data-modal-id="confirmationModal">&times;</span>
+            <div class="modal-header-fixed">
+                <h2>Confirm Action</h2>
+            </div>
+            <div class="modal-body-scrollable">
+                <p id="confirmationMessage"></p>
+                <div class="button-group">
+                    <button id="confirmActionButton" class="confirm-button">Confirm</button>
+                    <button id="cancelActionButton" class="cancel-button">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- User Detail Modal -->
+    <div id="userDetailModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button" data-modal-id="userDetailModal">&times;</span>
+            <div class="modal-header-fixed">
+                <h2>User Details</h2>
+            </div>
+            <div class="modal-body-scrollable">
+                <div class="user-details-grid">
+                    <p><strong>UID:</strong></p><p id="detailUid"></p>
+                    <p><strong>Email:</strong></p><p><a id="detailEmail" href="#"></a></p>
+                    <p><strong>First Name:</strong></p><p id="detailFirstName"></p>
+                    <p><strong>Last Name:</strong></p><p id="detailLastName"></p>
+                    <p><strong>Mobile:</strong></p><p><a id="detailMobile" href="#"></a></p>
+                    <p><strong>Gender:</strong></p><p id="detailGender"></p>
+                    <p><strong>Facebook:</strong></p><p><a id="detailFacebook" href="#" target="_blank"></a></p>
+                    <p><strong>Role:</strong></p><p id="detailRole"></p>
+                    <p><strong>Account Status:</strong></p><p id="detailAccountStatus"></p>
+                    <p><strong>Registered On:</strong></p><p id="detailCreatedAt"></p>
+                    <p><strong>Last Updated:</strong></p><p id="detailUpdatedAt"></p>
+                </div>
+                <div class="user-detail-actions">
+                    <button id="suspendUserButton" class="suspend-button">Suspend User</button>
+                    <button id="activateUserButton" class="approve-button">Activate User</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ride Booked Riders Modal -->
+    <div id="rideBookedRidersModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button" data-modal-id="rideBookedRidersModal">&times;</span>
+            <div class="modal-header-fixed">
+                <h2>Booked Riders for Ride <span id="bookedRidersRideId"></span></h2>
+                <p id="bookedRidersCountInfo"></p>
+            </div>
+            <div class="modal-body-scrollable">
+                <p id="noBookedRidersMessage" style="display: none; text-align: center; font-style: italic;">No riders booked for this ride.</p>
+                <table id="bookedRidersTable">
+                    <thead>
+                        <tr>
+                            <th>Email</th>
+                            <th>Name</th>
+                            <th>Mobile</th>
+                        </tr>
+                    </thead>
+                    <tbody id="bookedRidersTableBody">
+                        <!-- Booked riders will be loaded here by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Passenger Ride History Modal -->
+    <div id="passengerRidesModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button" data-modal-id="passengerRidesModal">&times;</span>
+            <div class="modal-header-fixed">
+                <h2>Ride History for <span id="passengerHistoryEmail"></span></h2>
+            </div>
+            <div class="modal-body-scrollable">
+                <p id="noPassengerRidesMessage" style="display: none; text-align: center; font-style: italic;">No rides found for this passenger.</p>
+                <table id="passengerRidesTable">
+                    <thead>
+                        <tr>
+                            <th>Ride ID</th>
+                            <th>Driver Email</th>
+                            <th>Start Location</th>
+                            <th>End Location</th>
+                            <th>Date</th>
+                            <th>Time</th>
+                            <th>Status</th>
+                            <th>Created On</th>
+                        </tr>
+                    </thead>
+                    <tbody id="passengerRidesTableBody">
+                        <!-- Passenger ride history will be loaded here by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Your JavaScript files (ensure order: auth.js first as others depend on it) -->
     <script type="module" src="js/auth.js"></script>
-    <!-- Import the shared dashboard roles script (to handle role selector and logout) -->
     <script type="module" src="js/dashboard_roles.js"></script>
-    <!-- Import the admin specific script -->
     <script type="module" src="js/admin_script.js"></script>
 </body>
 </html>
