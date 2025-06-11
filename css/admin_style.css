@@ -192,6 +192,22 @@
     background-color: #e74c3c; /* Red for reject */
 }
 
+/* NEW: Styles for Suspend and Activate Buttons */
+.action-buttons button.suspend {
+    background-color: #f39c12; /* Orange for suspend */
+}
+.action-buttons button.suspend:hover {
+    background-color: #e67e22;
+}
+
+.action-buttons button.activate {
+    background-color: #3498db; /* Blue for activate */
+}
+.action-buttons button.activate:hover {
+    background-color: #2980b9;
+}
+
+
 .action-buttons button:hover {
     opacity: 0.9;
 }
@@ -225,7 +241,7 @@
     box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
 }
 
-/* NEW: Styles for the Custom Confirmation Modal */
+/* Styles for the Custom Confirmation Modal */
 /* Reusing .modal and .modal-content from style.css */
 #confirmationModal .modal-content {
     max-width: 400px; /* Smaller for confirmation */
@@ -289,7 +305,136 @@
     background-color: #5a6268;
 }
 
-/* Responsive adjustments for filter controls */
+/* NEW: Styles for User Detail Modal */
+#userDetailModal .modal-content {
+    max-width: 600px; /* Wider for more details */
+    padding: 20px;
+}
+
+#userDetailModal .user-details-grid {
+    display: grid;
+    grid-template-columns: auto 1fr; /* Label and value columns */
+    gap: 10px 15px; /* Row and column gap */
+    padding-top: 10px;
+    font-size: 1.05em;
+    line-height: 1.4;
+}
+
+#userDetailModal .user-details-grid p {
+    margin: 0;
+    text-align: left;
+}
+
+#userDetailModal .user-details-grid strong {
+    color: #2c3e50;
+}
+
+#userDetailModal .user-details-grid span,
+#userDetailModal .user-details-grid a {
+    word-break: break-all; /* Break long text like emails/links */
+}
+
+#userDetailModal .user-details-grid a {
+    color: #3498db;
+    text-decoration: none;
+}
+
+#userDetailModal .user-details-grid a:hover {
+    text-decoration: underline;
+}
+
+#userDetailModal .user-detail-actions {
+    grid-column: 1 / -1; /* Span across both columns */
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px solid #eee;
+}
+
+#userDetailModal .user-detail-actions button {
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background-color 0.3s ease;
+    color: white;
+    border: none;
+}
+
+#userDetailModal .user-detail-actions .suspend-button {
+    background-color: #f39c12; /* Orange */
+}
+#userDetailModal .user-detail-actions .suspend-button:hover {
+    background-color: #e67e22;
+}
+
+#userDetailModal .user-detail-actions .approve-button {
+    background-color: #2ecc71; /* Green */
+}
+#userDetailModal .user-detail-actions .approve-button:hover {
+    background-color: #27ae60;
+}
+
+/* NEW: Pagination Controls Styles */
+.pagination-controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 15px;
+    margin-top: 25px;
+    padding: 15px;
+    background-color: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.pagination-controls button {
+    background-color: #3498db;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background-color 0.3s ease;
+}
+
+.pagination-controls button:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
+}
+
+.pagination-controls button:hover:not(:disabled) {
+    background-color: #2980b9;
+}
+
+.pagination-controls #pageInfo {
+    font-weight: bold;
+    color: #34495e;
+    min-width: 120px; /* Ensure space for text */
+    text-align: center;
+}
+
+.pagination-controls .items-per-page {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    color: #34495e;
+    font-size: 0.9em;
+}
+
+.pagination-controls .items-per-page select {
+    padding: 5px 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background-color: #f9f9f9;
+    font-size: 0.9em;
+}
+
+
+/* Responsive adjustments */
 @media (max-width: 768px) {
     .filter-controls {
         flex-direction: column;
@@ -298,12 +443,22 @@
     .filter-group {
         flex-direction: column;
         align-items: stretch;
-        gap: 5px; /* Reduce gap for stacking */
+        gap: 5px; 
     }
     .filter-controls select,
     .filter-controls input[type="text"],
     .filter-controls button {
-        width: 100%; /* Make inputs and buttons full width */
+        width: 100%; 
         max-width: none;
+    }
+    .pagination-controls {
+        flex-direction: column;
+        gap: 10px;
+    }
+    .pagination-controls button,
+    .pagination-controls #pageInfo,
+    .pagination-controls .items-per-page {
+        width: 100%;
+        text-align: center;
     }
 }

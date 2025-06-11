@@ -16,6 +16,7 @@
     <!-- Custom Confirmation Modal (for Approve/Reject) -->
     <div id="confirmationModal" class="modal">
         <div class="modal-content">
+            <span class="close-button" data-modal-id="confirmationModal">&times;</span>
             <div class="modal-header-fixed">
                 <h2>Confirm Action</h2>
             </div>
@@ -24,6 +25,35 @@
                 <div class="button-group">
                     <button id="confirmActionButton" class="confirm-button">Confirm</button>
                     <button id="cancelActionButton" class="cancel-button">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- NEW: User Detail View Modal -->
+    <div id="userDetailModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button" data-modal-id="userDetailModal">&times;</span>
+            <div class="modal-header-fixed">
+                <h2>User Details</h2>
+            </div>
+            <div class="modal-body-scrollable user-details-grid">
+                <p><strong>UID:</strong> <span id="detailUid"></span></p>
+                <p><strong>Email:</strong> <a id="detailEmail" href="#" target="_blank"></a></p>
+                <p><strong>First Name:</strong> <span id="detailFirstName"></span></p>
+                <p><strong>Last Name:</strong> <span id="detailLastName"></span></p>
+                <p><strong>Mobile:</strong> <a id="detailMobile" href="#"></a></p>
+                <p><strong>Gender:</strong> <span id="detailGender"></span></p>
+                <p><strong>Facebook:</strong> <a id="detailFacebook" href="#" target="_blank"></a></p>
+                <p><strong>Role:</strong> <span id="detailRole"></span></p>
+                <p><strong>City:</strong> <span id="detailCity"></span></p>
+                <p><strong>Account Status:</strong> <span id="detailAccountStatus"></span></p>
+                <p><strong>Registered On:</strong> <span id="detailCreatedAt"></span></p>
+                <p><strong>Last Updated:</strong> <span id="detailUpdatedAt"></span></p>
+
+                <div class="user-detail-actions">
+                    <button id="suspendUserButton" class="suspend-button">Suspend Account</button>
+                    <button id="activateUserButton" class="approve-button">Activate Account</button>
                 </div>
             </div>
         </div>
@@ -56,6 +86,7 @@
                     <option value="Awaiting Email Verification">Awaiting Email Verification</option>
                     <option value="Access Granted">Access Granted</option>
                     <option value="Rejected">Rejected</option>
+                    <option value="Suspended">Suspended</option> <!-- NEW: Suspended status -->
                     <option value="All">All Users</option>
                 </select>
             </div>
@@ -76,6 +107,7 @@
             </div>
 
             <button id="refreshUsersButton">Refresh List</button>
+            <button id="exportCsvButton">Export to CSV</button> <!-- NEW: Export CSV Button -->
         </div>
 
         <div class="users-table-container">
@@ -85,8 +117,8 @@
                         <th data-sort-key="email">Email</th>
                         <th data-sort-key="firstName">First Name</th>
                         <th data-sort-key="lastName">Last Name</th>
-                        <th data-sort-key="mobile">Mobile</th> <!-- NEW FIELD -->
-                        <th data-sort-key="gender">Gender</th> <!-- NEW FIELD -->
+                        <th data-sort-key="mobile">Mobile</th> 
+                        <th data-sort-key="gender">Gender</th> 
                         <th data-sort-key="role">Role</th>
                         <th data-sort-key="accountStatus">Status</th>
                         <th data-sort-key="createdAt">Registered On</th>
@@ -95,9 +127,25 @@
                 </thead>
                 <tbody>
                     <!-- User data will be loaded here by JavaScript -->
-                    <tr><td colspan="9">Loading users...</td></tr> <!-- Updated colspan -->
+                    <tr><td colspan="9">Loading users...</td></tr> 
                 </tbody>
             </table>
+        </div>
+
+        <!-- NEW: Pagination Controls -->
+        <div class="pagination-controls">
+            <button id="prevPageButton" disabled>&laquo; Prev</button>
+            <span id="pageInfo">Page 1 of 1</span>
+            <button id="nextPageButton" disabled>Next &raquo;</button>
+            <div class="items-per-page">
+                Items per page:
+                <select id="itemsPerPageSelect">
+                    <option value="10">10</option>
+                    <option value="20">20</option>
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                </select>
+            </div>
         </div>
     </main>
 
