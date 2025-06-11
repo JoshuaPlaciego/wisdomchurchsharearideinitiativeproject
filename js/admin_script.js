@@ -1,21 +1,21 @@
 // js/admin_script.js
 
-import { 
-    auth, 
-    db, 
-    signOut, 
+import {
+    auth,
+    db,
+    signOut,
     onAuthStateChanged,
     serverTimestamp,
-    getUserProfile 
+    getUserProfile
 } from './auth.js';
 
 // Import Firestore specific functions
-import { 
-    collection, 
-    getDocs, 
-    query, 
-    where, 
-    doc, 
+import {
+    collection,
+    getDocs,
+    query,
+    where,
+    doc,
     updateDoc,
     onSnapshot,
     addDoc // NEW: for adding announcements
@@ -28,12 +28,12 @@ import { displayGlobalNotification, clearAllMessages, removeGlobalBackdrop, popu
 const usersTableBody = document.querySelector('#usersTable tbody');
 const adminLogoutButton = document.getElementById('adminLogoutButton');
 const statusFilter = document.getElementById('statusFilter');
-const roleFilter = document.getElementById('roleFilter'); 
-const userSearch = document.getElementById('userSearch'); 
+const roleFilter = document.getElementById('roleFilter');
+const userSearch = document.getElementById('userSearch');
 const refreshUsersButton = document.getElementById('refreshUsersButton');
-const exportCsvButton = document.getElementById('exportCsvButton'); 
-const roleSelector = document.getElementById('roleSelector'); 
-const usersTableHeader = document.querySelector('#usersTable thead tr'); 
+const exportCsvButton = document.getElementById('exportCsvButton');
+const roleSelector = document.getElementById('roleSelector');
+const usersTableHeader = document.querySelector('#usersTable thead tr');
 
 // Custom Confirmation Modal elements (reused for user/ride actions)
 const confirmationModal = document.getElementById('confirmationModal');
@@ -54,8 +54,8 @@ const detailRole = document.getElementById('detailRole');
 const detailAccountStatus = document.getElementById('detailAccountStatus');
 const detailCreatedAt = document.getElementById('detailCreatedAt');
 const detailUpdatedAt = document.getElementById('detailUpdatedAt');
-const suspendUserButton = document.getElementById('suspendUserButton'); 
-const activateUserButton = document.getElementById('activateUserButton'); 
+const suspendUserButton = document.getElementById('suspendUserButton');
+const activateUserButton = document.getElementById('activateUserButton');
 
 // User Pagination elements
 const prevPageButton = document.getElementById('prevPageButton');
@@ -65,11 +65,11 @@ const itemsPerPageSelect = document.getElementById('itemsPerPageSelect');
 
 let allUsers = []; // Stores all fetched users
 let currentUserSortKey = null;
-let currentUserSortDirection = 'asc'; 
+let currentUserSortDirection = 'asc';
 
 // User Pagination state
 let currentUserPage = 1;
-let userItemsPerPage = parseInt(itemsPerPageSelect.value, 10); 
+let userItemsPerPage = parseInt(itemsPerPageSelect.value, 10);
 
 
 // --- Rides Monitoring Elements ---
@@ -155,7 +155,7 @@ document.querySelectorAll('.close-button').forEach(button => {
         if (modalId) {
             document.getElementById(modalId).style.display = 'none';
         }
-        clearAllMessages(); 
+        clearAllMessages();
     });
 });
 
@@ -174,15 +174,18 @@ if (adminLogoutButton) {
                 unsubscribeAnnouncementsSnapshot();
                 unsubscribeAnnouncementsSnapshot = null;
             }
-            // Destroy all chart instances on logout
+            // Destroy all chart instances on logout using the new safe destroy
+            // These will be destroyed implicitly when their canvases are removed by getOrCreateChartCanvas
+            // but explicitly setting to null here is good practice.
             if (userSignupsChartInstance) { userSignupsChartInstance.destroy(); userSignupsChartInstance = null; }
             if (ridesStatusChartInstance) { ridesStatusChartInstance.destroy(); ridesStatusChartInstance = null; }
             if (ridesOfferedCompletedChartInstance) { ridesOfferedCompletedChartInstance.destroy(); ridesOfferedCompletedChartInstance = null; }
             if (popularRoutesChartInstance) { popularRoutesChartInstance.destroy(); popularRoutesChartInstance = null; }
 
+
             sessionStorage.removeItem('currentUserRole');
             sessionStorage.removeItem('isAdmin');
-            window.location.href = 'index.html'; 
+            window.location.href = 'index.html';
         } catch (error) {
             console.error("Error during logout:", error);
             displayGlobalNotification('Failed to log out: ' + error.message, 'error');
@@ -198,22 +201,22 @@ if (adminLogoutButton) {
  * This now fetches all users and stores them in 'allUsers' for client-side filtering.
  */
 async function fetchAllUsers() {
-    usersTableBody.innerHTML = '<tr><td colspan="9">Loading users...</td></tr>'; 
+    usersTableBody.innerHTML = '<tr><td colspan="9">Loading users...</td></tr>';
     try {
         const usersRef = collection(db, 'users');
-        const q = query(usersRef); 
-        const querySnapshot = await getDocs(q); 
-        allUsers = []; 
+        const q = query(usersRef);
+        const querySnapshot = await getDocs(q);
+        allUsers = [];
         querySnapshot.forEach((doc) => {
             allUsers.push({ id: doc.id, ...doc.data() });
         });
-        currentUserPage = 1; 
-        applyUserFiltersAndSort(); 
+        currentUserPage = 1;
+        applyUserFiltersAndSort();
         updateAnalyticsCharts(); // Refresh analytics charts after user data is fetched
         updateFirebaseUsageMetrics(); // Update usage metrics after fetching users
     } catch (error) {
         console.error("Error fetching users:", error);
-        usersTableBody.innerHTML = '<tr><td colspan="9" class="error-message">Error loading users. Please try again.</td></tr>'; 
+        usersTableBody.innerHTML = '<tr><td colspan="9" class="error-message">Error loading users. Please try again.</td></tr>';
         displayGlobalNotification('Failed to load users: ' + error.message, 'error');
     }
 }
@@ -223,7 +226,7 @@ async function fetchAllUsers() {
  * then calls renderUsers to display the filtered and sorted data.
  */
 function applyUserFiltersAndSort() {
-    let filteredUsers = [...allUsers]; 
+    let filteredUsers = [...allUsers];
 
     const selectedStatus = statusFilter.value;
     if (selectedStatus !== 'All') {
@@ -237,7 +240,7 @@ function applyUserFiltersAndSort() {
 
     const searchTerm = userSearch.value.toLowerCase().trim();
     if (searchTerm) {
-        filteredUsers = filteredUsers.filter(user => 
+        filteredUsers = filteredUsers.filter(user =>
             (user.email && user.email.toLowerCase().includes(searchTerm)) ||
             (user.firstName && user.firstName.toLowerCase().includes(searchTerm)) ||
             (user.lastName && user.lastName.toLowerCase().includes(searchTerm)) ||
@@ -254,7 +257,7 @@ function applyUserFiltersAndSort() {
             if (valB === undefined || valB === null) valB = '';
 
             if (currentUserSortKey === 'createdAt' || currentUserSortKey === 'updatedAt') {
-                valA = valA ? valA.toMillis() : 0; 
+                valA = valA ? valA.toMillis() : 0;
                 valB = valB ? valB.toMillis() : 0;
             } else if (typeof valA === 'string') {
                 valA = valA.toLowerCase();
@@ -268,7 +271,7 @@ function applyUserFiltersAndSort() {
     }
 
     const totalPages = Math.ceil(filteredUsers.length / userItemsPerPage);
-    currentUserPage = Math.max(1, Math.min(currentUserPage, totalPages)); 
+    currentUserPage = Math.max(1, Math.min(currentUserPage, totalPages));
 
     const startIndex = (currentUserPage - 1) * userItemsPerPage;
     const endIndex = startIndex + userItemsPerPage;
@@ -284,10 +287,10 @@ function applyUserFiltersAndSort() {
  * @param {Array<Object>} users - Array of user objects.
  */
 function renderUsers(users) {
-    usersTableBody.innerHTML = ''; 
+    usersTableBody.innerHTML = '';
 
     if (users.length === 0) {
-        usersTableBody.innerHTML = '<tr><td colspan="9">No users found with the selected criteria.</td></tr>'; 
+        usersTableBody.innerHTML = '<tr><td colspan="9">No users found with the selected criteria.</td></tr>';
         return;
     }
 
@@ -296,8 +299,8 @@ function renderUsers(users) {
         row.insertCell().textContent = user.email || 'N/A';
         row.insertCell().textContent = user.firstName || 'N/A';
         row.insertCell().textContent = user.lastName || 'N/A';
-        row.insertCell().textContent = user.mobile || 'N/A'; 
-        row.insertCell().textContent = user.gender || 'N/A'; 
+        row.insertCell().textContent = user.mobile || 'N/A';
+        row.insertCell().textContent = user.gender || 'N/A';
         row.insertCell().textContent = user.role || 'N/A';
         row.insertCell().textContent = user.accountStatus || 'N/A';
 
@@ -318,29 +321,29 @@ function renderUsers(users) {
 
             const rejectButton = document.createElement('button');
             rejectButton.textContent = 'Reject';
-            rejectButton.className = 'reject'; 
+            rejectButton.className = 'reject';
             rejectButton.onclick = (e) => { e.stopPropagation(); showConfirmationModal(user.id, 'Rejected', user.email); };
             actionsCell.appendChild(rejectButton);
         } else if (user.accountStatus === 'Access Granted') {
             const suspendButton = document.createElement('button');
             suspendButton.textContent = 'Suspend';
-            suspendButton.className = 'suspend'; 
-            suspendButton.onclick = (e) => { e.stopPropagation(); showConfirmationModal(user.id, 'Suspended', user.email); }; 
+            suspendButton.className = 'suspend';
+            suspendButton.onclick = (e) => { e.stopPropagation(); showConfirmationModal(user.id, 'Suspended', user.email); };
             actionsCell.appendChild(suspendButton);
-        } else if (user.accountStatus === 'Suspended' || user.accountStatus === 'Rejected') { 
+        } else if (user.accountStatus === 'Suspended' || user.accountStatus === 'Rejected') {
             const activateButton = document.createElement('button');
             activateButton.textContent = 'Activate';
-            activateButton.className = 'activate'; 
-            activateButton.onclick = (e) => { e.stopPropagation(); showConfirmationModal(user.id, 'Access Granted', user.email); }; 
+            activateButton.className = 'activate';
+            activateButton.onclick = (e) => { e.stopPropagation(); showConfirmationModal(user.id, 'Access Granted', user.email); };
             actionsCell.appendChild(activateButton);
         }
 
         const viewRidesButton = document.createElement('button');
         viewRidesButton.textContent = 'View Rides';
-        viewRidesButton.className = 'view-rides'; 
-        viewRidesButton.onclick = (e) => { 
-            e.stopPropagation(); 
-            openPassengerRidesModal(user.email); 
+        viewRidesButton.className = 'view-rides';
+        viewRidesButton.onclick = (e) => {
+            e.stopPropagation();
+            openPassengerRidesModal(user.email);
         };
         actionsCell.appendChild(viewRidesButton);
     });
@@ -351,7 +354,7 @@ function renderUsers(users) {
  * @param {Object} user - The user object to display.
  */
 async function openUserDetailModal(user) {
-    clearAllMessages(); 
+    clearAllMessages();
     if (!user) {
         displayGlobalNotification('User details not found.', 'error');
         return;
@@ -359,13 +362,13 @@ async function openUserDetailModal(user) {
 
     detailUid.textContent = user.id || 'N/A';
     detailEmail.textContent = user.email || 'N/A';
-    detailEmail.href = `mailto:${user.email}`; 
+    detailEmail.href = `mailto:${user.email}`;
     detailFirstName.textContent = user.firstName || 'N/A';
     detailLastName.textContent = user.lastName || 'N/A';
     detailMobile.textContent = user.mobile || 'N/A';
-    detailMobile.href = `tel:${user.mobile}`; 
+    detailMobile.href = `tel:${user.mobile}`;
     detailGender.textContent = user.gender || 'N/A';
-    
+
     if (user.facebookLink) {
         detailFacebook.textContent = user.facebookLink;
         detailFacebook.href = user.facebookLink;
@@ -373,9 +376,9 @@ async function openUserDetailModal(user) {
     } else {
         detailFacebook.textContent = 'N/A';
         detailFacebook.href = '#';
-        detailFacebook.style.display = 'inline'; 
+        detailFacebook.style.display = 'inline';
     }
-    
+
     detailRole.textContent = user.role || 'N/A';
     detailAccountStatus.textContent = user.accountStatus || 'N/A';
     detailCreatedAt.textContent = user.createdAt && user.createdAt.toDate ? user.createdAt.toDate().toLocaleString() : 'N/A';
@@ -389,17 +392,17 @@ async function openUserDetailModal(user) {
 
     if (user.accountStatus === 'Access Granted') {
         suspendUserButton.style.display = 'inline-block';
-        suspendUserButton.onclick = (e) => { 
-            e.stopPropagation(); 
-            userDetailModal.style.display = 'none'; 
-            showConfirmationModal(user.id, 'Suspended', user.email); 
+        suspendUserButton.onclick = (e) => {
+            e.stopPropagation();
+            userDetailModal.style.display = 'none';
+            showConfirmationModal(user.id, 'Suspended', user.email);
         };
     } else if (user.accountStatus === 'Suspended' || user.accountStatus === 'Rejected' || user.accountStatus === 'Awaiting Admin Approval' || user.accountStatus === 'Awaiting Email Verification') {
         activateUserButton.style.display = 'inline-block';
-        activateUserButton.onclick = (e) => { 
-            e.stopPropagation(); 
-            userDetailModal.style.display = 'none'; 
-            showConfirmationModal(user.id, 'Access Granted', user.email); 
+        activateUserButton.onclick = (e) => {
+            e.stopPropagation();
+            userDetailModal.style.display = 'none';
+            showConfirmationModal(user.id, 'Access Granted', user.email);
         };
     }
 
@@ -414,15 +417,15 @@ async function openUserDetailModal(user) {
  * @param {string} type - 'user' or 'ride' to differentiate action.
  */
 function showConfirmationModal(entityId, newStatus, entityDisplay, type = 'user') {
-    clearAllMessages(); 
+    clearAllMessages();
     confirmationMessage.textContent = `Are you sure you want to change the status of ${entityDisplay} to "${newStatus}"?`;
-    confirmationModal.style.display = 'flex'; 
+    confirmationModal.style.display = 'flex';
 
     confirmActionButton.onclick = null;
     cancelActionButton.onclick = null;
 
     confirmActionButton.onclick = async () => {
-        confirmationModal.style.display = 'none'; 
+        confirmationModal.style.display = 'none';
         if (type === 'user') {
             await updateAccountStatus(entityId, newStatus);
         } else if (type === 'ride') {
@@ -431,7 +434,7 @@ function showConfirmationModal(entityId, newStatus, entityDisplay, type = 'user'
     };
 
     cancelActionButton.onclick = () => {
-        confirmationModal.style.display = 'none'; 
+        confirmationModal.style.display = 'none';
     };
 }
 
@@ -446,10 +449,10 @@ async function updateAccountStatus(userId, newStatus) {
         const userDocRef = doc(db, 'users', userId);
         await updateDoc(userDocRef, {
             accountStatus: newStatus,
-            updatedAt: serverTimestamp() 
+            updatedAt: serverTimestamp()
         });
         displayGlobalNotification(`User status updated to "${newStatus}" for user ID: ${userId}`, 'success');
-        fetchAllUsers(); 
+        fetchAllUsers();
     } catch (error) {
         console.error("Error updating user status:", error);
         let errorMessage = "Failed to update user status.";
@@ -466,24 +469,24 @@ if (statusFilter) {
     statusFilter.addEventListener('change', () => { currentUserPage = 1; applyUserFiltersAndSort(); });
 }
 
-if (roleFilter) { 
+if (roleFilter) {
     roleFilter.addEventListener('change', () => { currentUserPage = 1; applyUserFiltersAndSort(); });
 }
 
-if (userSearch) { 
+if (userSearch) {
     userSearch.addEventListener('input', () => { currentUserPage = 1; applyUserFiltersAndSort(); });
 }
 
 if (refreshUsersButton) {
-    refreshUsersButton.addEventListener('click', fetchAllUsers); 
+    refreshUsersButton.addEventListener('click', fetchAllUsers);
 }
 
 // Export User Data to CSV
 if (exportCsvButton) {
     exportCsvButton.addEventListener('click', () => {
         const headers = ['Email', 'First Name', 'Last Name', 'Mobile', 'Gender', 'Facebook Link', 'Role', 'Account Status', 'Registered On', 'Last Updated'];
-        
-        let usersToExport = [...allUsers]; 
+
+        let usersToExport = [...allUsers];
         const selectedStatus = statusFilter.value;
         if (selectedStatus !== 'All') {
             usersToExport = usersToExport.filter(user => user.accountStatus === selectedStatus);
@@ -494,7 +497,7 @@ if (exportCsvButton) {
         }
         const searchTerm = userSearch.value.toLowerCase().trim();
         if (searchTerm) {
-            usersToExport = usersToExport.filter(user => 
+            usersToExport = usersToExport.filter(user =>
                 (user.email && user.email.toLowerCase().includes(searchTerm)) ||
                 (user.firstName && user.firstName.toLowerCase().includes(searchTerm)) ||
                 (user.lastName && user.lastName.toLowerCase().includes(searchTerm)) ||
@@ -510,7 +513,7 @@ if (exportCsvButton) {
                 if (valB === undefined || valB === null) valB = '';
 
                 if (currentUserSortKey === 'createdAt' || currentUserSortKey === 'updatedAt') {
-                    valA = valA ? valA.toMillis() : 0; 
+                    valA = valA ? valA.toMillis() : 0;
                     valB = valB ? valB.toMillis() : 0;
                 } else if (typeof valA === 'string') {
                     valA = valA.toLowerCase();
@@ -536,10 +539,10 @@ if (exportCsvButton) {
                 user.facebookLink || '',
                 user.role || '',
                 user.accountStatus || '',
-                (user.createdAt && user.createdAt.toDate ? `"${user.createdAt.toDate().toLocaleString()}"` : ''), 
-                (user.updatedAt && user.updatedAt.toDate ? `"${user.updatedAt.toDate().toLocaleString()}"` : '') 
+                (user.createdAt && user.createdAt.toDate ? `"${user.createdAt.toDate().toLocaleString()}"` : ''),
+                (user.updatedAt && user.updatedAt.toDate ? `"${user.updatedAt.toDate().toLocaleString()}"` : '')
             ];
-            csvContent += row.map(field => `"${String(field).replace(/"/g, '""')}"`).join(',') + '\n'; 
+            csvContent += row.map(field => `"${String(field).replace(/"/g, '""')}"`).join(',') + '\n';
         });
 
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -568,7 +571,7 @@ if (usersTableHeader) {
                 currentUserSortDirection = currentUserSortDirection === 'asc' ? 'desc' : 'asc';
             } else {
                 currentUserSortKey = key;
-                currentUserSortDirection = 'asc'; 
+                currentUserSortDirection = 'asc';
             }
 
             usersTableHeader.querySelectorAll('th').forEach(th => {
@@ -576,8 +579,8 @@ if (usersTableHeader) {
             });
 
             target.classList.add(`sort-${currentUserSortDirection}`);
-            
-            applyUserFiltersAndSort(); 
+
+            applyUserFiltersAndSort();
         }
     });
 }
@@ -594,7 +597,7 @@ if (prevPageButton) {
 
 if (nextPageButton) {
     nextPageButton.addEventListener('click', () => {
-        const totalPages = Math.ceil(allUsers.length / userItemsPerPage); 
+        const totalPages = Math.ceil(allUsers.length / userItemsPerPage);
         if (currentUserPage < totalPages) {
             currentUserPage++;
             applyUserFiltersAndSort();
@@ -605,7 +608,7 @@ if (nextPageButton) {
 if (itemsPerPageSelect) {
     itemsPerPageSelect.addEventListener('change', (event) => {
         userItemsPerPage = parseInt(event.target.value, 10);
-        currentUserPage = 1; 
+        currentUserPage = 1;
         applyUserFiltersAndSort();
     });
 }
@@ -618,7 +621,7 @@ if (itemsPerPageSelect) {
 function updateUserPaginationControls(totalItems, totalPages) {
     pageInfo.textContent = `Page ${currentUserPage} of ${totalPages} (${totalItems} users)`;
     prevPageButton.disabled = currentUserPage === 1;
-    nextPageButton.disabled = currentUserPage === totalPages || totalItems === 0; 
+    nextPageButton.disabled = currentUserPage === totalPages || totalItems === 0;
 }
 
 
@@ -628,9 +631,9 @@ function updateUserPaginationControls(totalItems, totalPages) {
  * Establishes a real-time Firestore listener for ride data.
  */
 async function setupRidesLiveMonitoring() {
-    ridesTableBody.innerHTML = '<tr><td colspan="12">Loading rides data...</td></tr>'; 
+    ridesTableBody.innerHTML = '<tr><td colspan="12">Loading rides data...</td></tr>';
     try {
-        const ridesRef = collection(db, 'rides'); 
+        const ridesRef = collection(db, 'rides');
         const q = query(ridesRef);
 
         if (unsubscribeRidesSnapshot) {
@@ -643,20 +646,20 @@ async function setupRidesLiveMonitoring() {
             querySnapshot.forEach((doc) => {
                 allRides.push({ id: doc.id, ...doc.data() });
             });
-            currentRidePage = 1; 
+            currentRidePage = 1;
             applyRideFiltersAndSort();
             updateAnalyticsCharts(); // Refresh analytics charts after ride data is fetched
             updateFirebaseUsageMetrics(); // Update usage metrics after fetching rides
         }, (error) => {
             console.error("Error setting up live rides monitoring:", error);
-            ridesTableBody.innerHTML = '<tr><td colspan="12" class="error-message">Error loading rides. Live monitoring failed.</td></tr>'; 
+            ridesTableBody.innerHTML = '<tr><td colspan="12" class="error-message">Error loading rides. Live monitoring failed.</td></tr>';
             displayGlobalNotification('Failed to set up live rides monitoring: ' + error.message, 'error');
         });
         displayGlobalNotification('Live monitoring for rides established!', 'info');
 
     } catch (error) {
         console.error("Error initiating live rides monitoring setup:", error);
-        ridesTableBody.innerHTML = '<tr><td colspan="12" class="error-message">Error initializing rides monitoring.</td></tr>'; 
+        ridesTableBody.innerHTML = '<tr><td colspan="12" class="error-message">Error initializing rides monitoring.</td></tr>';
         displayGlobalNotification('Error initializing rides monitoring: ' + error.message, 'error');
     }
 }
@@ -675,7 +678,7 @@ function applyRideFiltersAndSort() {
 
     const searchTerm = rideSearch.value.toLowerCase().trim();
     if (searchTerm) {
-        filteredRides = filteredRides.filter(ride => 
+        filteredRides = filteredRides.filter(ride =>
             (ride.driverEmail && ride.driverEmail.toLowerCase().includes(searchTerm)) ||
             (ride.startLocation && ride.startLocation.toLowerCase().includes(searchTerm)) ||
             (ride.endLocation && ride.endLocation.toLowerCase().includes(searchTerm)) ||
@@ -692,10 +695,10 @@ function applyRideFiltersAndSort() {
             if (valB === undefined || valB === null) valB = '';
 
             // Handle numeric values for sorting (seats, numBookedRiders)
-            if (currentRideSortKey === 'availableSeats' || currentRideSortKey === 'numBookedRiders') { 
+            if (currentRideSortKey === 'availableSeats' || currentRideSortKey === 'numBookedRiders') {
                 valA = parseFloat(valA) || 0;
                 valB = parseFloat(valB) || 0;
-            } else if (currentRideSortKey === 'createdAt' || currentRideSortKey === 'rideDate') { 
+            } else if (currentRideSortKey === 'createdAt' || currentRideSortKey === 'rideDate') {
                 valA = valA ? valA.toMillis() : 0;
                 valB = valB ? valB.toMillis() : 0;
             } else if (typeof valA === 'string') {
@@ -725,10 +728,10 @@ function applyRideFiltersAndSort() {
  * @param {Array<Object>} rides - Array of ride objects.
  */
 function renderRidesTable(rides) {
-    ridesTableBody.innerHTML = ''; 
+    ridesTableBody.innerHTML = '';
 
     if (rides.length === 0) {
-        ridesTableBody.innerHTML = '<tr><td colspan="12">No rides found with the selected criteria.</td></tr>'; 
+        ridesTableBody.innerHTML = '<tr><td colspan="12">No rides found with the selected criteria.</td></tr>';
         return;
     }
 
@@ -737,16 +740,16 @@ function renderRidesTable(rides) {
         row.insertCell().textContent = ride.id || 'N/A';
         row.insertCell().textContent = ride.driverEmail || 'N/A';
         row.insertCell().textContent = (Array.isArray(ride.passengerEmails) && ride.passengerEmails.length > 0) ? ride.passengerEmails.join(', ') : 'None';
-        
+
         const numBookedRiders = (Array.isArray(ride.passengerEmails) ? ride.passengerEmails.length : 0);
         const bookedRidersCell = row.insertCell();
         bookedRidersCell.textContent = numBookedRiders;
-        bookedRidersCell.style.cursor = 'pointer'; 
+        bookedRidersCell.style.cursor = 'pointer';
         bookedRidersCell.style.textDecoration = 'underline';
         bookedRidersCell.style.color = '#3498db';
         if (numBookedRiders > 0) {
             bookedRidersCell.addEventListener('click', (e) => {
-                e.stopPropagation(); 
+                e.stopPropagation();
                 openBookedRidersModal(ride.id, ride.passengerEmails);
             });
         } else {
@@ -757,11 +760,11 @@ function renderRidesTable(rides) {
 
         row.insertCell().textContent = ride.startLocation || 'N/A';
         row.insertCell().textContent = ride.endLocation || 'N/A';
-        
+
         const rideDate = ride.rideDate && ride.rideDate.toDate ? ride.rideDate.toDate().toLocaleDateString() : 'N/A';
         row.insertCell().textContent = rideDate;
-        
-        row.insertCell().textContent = ride.rideTime || 'N/A'; 
+
+        row.insertCell().textContent = ride.rideTime || 'N/A';
         row.insertCell().textContent = ride.availableSeats !== undefined ? ride.availableSeats : 'N/A';
         row.insertCell().textContent = ride.status || 'N/A';
 
@@ -774,21 +777,21 @@ function renderRidesTable(rides) {
         if (ride.status === 'Offered' || ride.status === 'Booked') {
             const cancelButton = document.createElement('button');
             cancelButton.textContent = 'Cancel';
-            cancelButton.className = 'reject'; 
+            cancelButton.className = 'reject';
             cancelButton.onclick = (e) => { e.stopPropagation(); showConfirmationModal(ride.id, 'Cancelled', `Ride ${ride.id}`, 'ride'); };
             actionsCell.appendChild(cancelButton);
         }
         if (ride.status === 'Booked') {
             const completeButton = document.createElement('button');
             completeButton.textContent = 'Complete';
-            completeButton.className = 'approve'; 
+            completeButton.className = 'approve';
             completeButton.onclick = (e) => { e.stopPropagation(); showConfirmationModal(ride.id, 'Completed', `Ride ${ride.id}`, 'ride'); };
             actionsCell.appendChild(completeButton);
         }
         if (ride.status === 'Cancelled' || ride.status === 'Completed') {
             const relistButton = document.createElement('button');
             relistButton.textContent = 'Relist';
-            relistButton.className = 'activate'; 
+            relistButton.className = 'activate';
             relistButton.onclick = (e) => { e.stopPropagation(); showConfirmationModal(ride.id, 'Offered', `Ride ${ride.id}`, 'ride'); };
             actionsCell.appendChild(relistButton);
         }
@@ -802,7 +805,7 @@ function renderRidesTable(rides) {
  */
 async function openBookedRidersModal(rideId, passengerEmails) {
     clearAllMessages();
-    bookedRidersTableBody.innerHTML = ''; 
+    bookedRidersTableBody.innerHTML = '';
     bookedRidersRideId.textContent = rideId;
     bookedRidersCountInfo.textContent = `Total Booked: ${passengerEmails.length}`;
     noBookedRidersMessage.style.display = 'none';
@@ -813,9 +816,9 @@ async function openBookedRidersModal(rideId, passengerEmails) {
         return;
     }
 
-    const bookedRidersDetails = passengerEmails.map(email => 
+    const bookedRidersDetails = passengerEmails.map(email =>
         allUsers.find(user => user.email === email)
-    ).filter(Boolean); 
+    ).filter(Boolean);
 
     if (bookedRidersDetails.length === 0) {
         noBookedRidersMessage.style.display = 'block';
@@ -839,11 +842,11 @@ async function openBookedRidersModal(rideId, passengerEmails) {
  */
 async function openPassengerRidesModal(passengerEmail) {
     clearAllMessages();
-    passengerRidesTableBody.innerHTML = ''; 
+    passengerRidesTableBody.innerHTML = '';
     passengerHistoryEmail.textContent = passengerEmail;
     noPassengerRidesMessage.style.display = 'none';
 
-    const passengerRideHistory = allRides.filter(ride => 
+    const passengerRideHistory = allRides.filter(ride =>
         Array.isArray(ride.passengerEmails) && ride.passengerEmails.includes(passengerEmail)
     );
 
@@ -912,7 +915,7 @@ if (exportRidesCsvButton) {
             'Ride ID', 'Driver Email', 'Passenger(s) Email', 'Number of Booked Riders', 'Start Location', 'End Location',
             'Ride Date', 'Ride Time', 'Available Seats', 'Status', 'Created On'
         ];
-        
+
         let ridesToExport = [...allRides];
         const selectedStatus = rideStatusFilter.value;
         if (selectedStatus !== 'All') {
@@ -920,7 +923,7 @@ if (exportRidesCsvButton) {
         }
         const searchTerm = rideSearch.value.toLowerCase().trim();
         if (searchTerm) {
-            ridesToExport = ridesToExport.filter(ride => 
+            ridesToExport = ridesToExport.filter(ride =>
                 (ride.driverEmail && ride.driverEmail.toLowerCase().includes(searchTerm)) ||
                 (ride.startLocation && ride.startLocation.toLowerCase().includes(searchTerm)) ||
                 (ride.endLocation && ride.endLocation.toLowerCase().includes(searchTerm)) ||
@@ -960,7 +963,7 @@ if (exportRidesCsvButton) {
                 ride.id || '',
                 ride.driverEmail || '',
                 (Array.isArray(ride.passengerEmails) && ride.passengerEmails.length > 0) ? `"${ride.passengerEmails.join(', ')}"` : '',
-                (Array.isArray(ride.passengerEmails) ? ride.passengerEmails.length : 0), 
+                (Array.isArray(ride.passengerEmails) ? ride.passengerEmails.length : 0),
                 `"${String(ride.startLocation || '').replace(/"/g, '""')}"`,
                 `"${String(ride.endLocation || '').replace(/"/g, '""')}"`,
                 (ride.rideDate && ride.rideDate.toDate ? `"${ride.rideDate.toDate().toLocaleDateString()}"` : ''),
@@ -1005,7 +1008,7 @@ if (ridesTableHeader) {
             });
 
             target.classList.add(`sort-${currentRideSortDirection}`);
-            
+
             applyRideFiltersAndSort();
         }
     });
@@ -1034,7 +1037,7 @@ if (nextRidePageButton) {
 if (ridesPerPageSelect) {
     ridesPerPageSelect.addEventListener('change', (event) => {
         rideItemsPerPage = parseInt(event.target.value, 10);
-        currentRidePage = 1; 
+        currentRidePage = 1;
         applyRideFiltersAndSort();
     });
 }
@@ -1052,6 +1055,54 @@ function updateRidePaginationControls(totalItems, totalPages) {
 
 
 // --- NEW: Analytics & Statistics Functions ---
+
+/**
+ * Safely gets or creates a new canvas element for Chart.js to prevent "Canvas is already in use" errors.
+ * Destroys any existing chart instance on the old canvas before replacing it.
+ * @param {string} canvasElementId - The ID of the canvas element.
+ * @returns {HTMLCanvasElement} The new or existing canvas element.
+ */
+function getOrCreateChartCanvas(canvasElementId) {
+    let oldCanvas = document.getElementById(canvasElementId);
+    let parent = null;
+
+    if (oldCanvas) {
+        parent = oldCanvas.parentNode;
+        // Destroy existing chart instance before removing canvas
+        if (canvasElementId === 'userSignupsChart' && userSignupsChartInstance) { userSignupsChartInstance.destroy(); userSignupsChartInstance = null; }
+        if (canvasElementId === 'ridesStatusChart' && ridesStatusChartInstance) { ridesStatusChartInstance.destroy(); ridesStatusChartInstance = null; }
+        if (canvasElementId === 'ridesOfferedCompletedChart' && ridesOfferedCompletedChartInstance) { ridesOfferedCompletedChartInstance.destroy(); ridesOfferedCompletedChartInstance = null; }
+        if (canvasElementId === 'popularRoutesChart' && popularRoutesChartInstance) { popularRoutesChartInstance.destroy(); popularRoutesChartInstance = null; }
+
+        if (parent) { // Ensure parent exists before removing child
+            parent.removeChild(oldCanvas);
+        } else {
+            console.warn(`Parent of canvas with ID ${canvasElementId} not found, cannot remove old canvas.`);
+            return oldCanvas; // Return old canvas if parent is missing
+        }
+    } else {
+        // If old canvas not found, try to find the parent from its known ID in HTML
+        // This assumes the chart canvas is always inside a .chart-card
+        const chartCard = document.querySelector(`.chart-card canvas#${canvasElementId}`).closest('.chart-card');
+        if (chartCard) {
+            parent = chartCard;
+        } else {
+            console.error(`Canvas with ID ${canvasElementId} or its parent .chart-card not found.`);
+            return null;
+        }
+    }
+
+    let newCanvas = document.createElement('canvas');
+    newCanvas.id = canvasElementId;
+    if (parent) { // Only append if parent is found
+        parent.appendChild(newCanvas);
+    } else {
+        console.error(`Cannot append new canvas, parent is null for ${canvasElementId}.`);
+        return null;
+    }
+    return newCanvas;
+}
+
 
 // Function to process data and render charts
 function updateAnalyticsCharts() {
@@ -1077,18 +1128,20 @@ function updateAnalyticsCharts() {
         return isAfterStart && isBeforeEnd;
     });
 
-    renderUserSignupsChart(filteredUsers);
-    renderRidesStatusChart(filteredRides);
-    renderRidesOfferedCompletedChart(filteredRides);
-    renderPopularRoutesChart(filteredRides);
+    // Pass the new canvas element from getOrCreateChartCanvas
+    renderUserSignupsChart(filteredUsers, getOrCreateChartCanvas('userSignupsChart'));
+    renderRidesStatusChart(filteredRides, getOrCreateChartCanvas('ridesStatusChart'));
+    renderRidesOfferedCompletedChart(filteredRides, getOrCreateChartCanvas('ridesOfferedCompletedChart'));
+    renderPopularRoutesChart(filteredRides, getOrCreateChartCanvas('popularRoutesChart'));
 }
 
 /**
  * Renders the New User Sign-ups chart.
  * @param {Array<Object>} users - Filtered user data.
+ * @param {HTMLCanvasElement} canvasElement - The canvas element to render the chart on.
  */
-function renderUserSignupsChart(users) {
-    if (!userSignupsChartCanvas) return;
+function renderUserSignupsChart(users, canvasElement) {
+    if (!canvasElement) return;
 
     // Aggregate data by day within the selected range
     const signupsByDate = {};
@@ -1103,12 +1156,8 @@ function renderUserSignupsChart(users) {
     const sortedDates = Object.keys(signupsByDate).sort();
     const signupCounts = sortedDates.map(date => signupsByDate[date]);
 
-    if (userSignupsChartInstance) {
-        userSignupsChartInstance.destroy();
-        userSignupsChartInstance = null; // Explicitly nullify after destruction
-    }
-
-    userSignupsChartInstance = new Chart(userSignupsChartCanvas, {
+    // No need to destroy here, as getOrCreateChartCanvas already handles it
+    userSignupsChartInstance = new Chart(canvasElement, { // Use the passed canvasElement
         type: 'line',
         data: {
             labels: sortedDates,
@@ -1162,9 +1211,10 @@ function renderUserSignupsChart(users) {
 /**
  * Renders the Rides Status Distribution chart.
  * @param {Array<Object>} rides - Filtered ride data.
+ * @param {HTMLCanvasElement} canvasElement - The canvas element to render the chart on.
  */
-function renderRidesStatusChart(rides) {
-    if (!ridesStatusChartCanvas) return;
+function renderRidesStatusChart(rides, canvasElement) {
+    if (!canvasElement) return;
 
     const statusCounts = {};
     rides.forEach(ride => {
@@ -1177,12 +1227,8 @@ function renderRidesStatusChart(rides) {
 
     const colors = ['#48bb78', '#f6ad55', '#4299e1', '#ef4444', '#718096']; // Green, Orange, Blue, Red, Grey
 
-    if (ridesStatusChartInstance) {
-        ridesStatusChartInstance.destroy();
-        ridesStatusChartInstance = null; // Explicitly nullify after destruction
-    }
-
-    ridesStatusChartInstance = new Chart(ridesStatusChartCanvas, {
+    // No need to destroy here, as getOrCreateChartCanvas already handles it
+    ridesStatusChartInstance = new Chart(canvasElement, { // Use the passed canvasElement
         type: 'doughnut',
         data: {
             labels: labels,
@@ -1217,9 +1263,10 @@ function renderRidesStatusChart(rides) {
 /**
  * Renders the Rides Offered vs. Completed chart.
  * @param {Array<Object>} rides - Filtered ride data.
+ * @param {HTMLCanvasElement} canvasElement - The canvas element to render the chart on.
  */
-function renderRidesOfferedCompletedChart(rides) {
-    if (!ridesOfferedCompletedChartCanvas) return;
+function renderRidesOfferedCompletedChart(rides, canvasElement) {
+    if (!canvasElement) return;
 
     const offeredByDate = {};
     const completedByDate = {};
@@ -1241,12 +1288,8 @@ function renderRidesOfferedCompletedChart(rides) {
     const offeredCounts = allDates.map(date => offeredByDate[date] || 0);
     const completedCounts = allDates.map(date => completedByDate[date] || 0);
 
-    if (ridesOfferedCompletedChartInstance) {
-        ridesOfferedCompletedChartInstance.destroy();
-        ridesOfferedCompletedChartInstance = null; // Explicitly nullify after destruction
-    }
-
-    ridesOfferedCompletedChartInstance = new Chart(ridesOfferedCompletedChartCanvas, {
+    // No need to destroy here, as getOrCreateChartCanvas already handles it
+    ridesOfferedCompletedChartInstance = new Chart(canvasElement, { // Use the passed canvasElement
         type: 'bar',
         data: {
             labels: allDates,
@@ -1310,9 +1353,10 @@ function renderRidesOfferedCompletedChart(rides) {
 /**
  * Renders the Top 5 Most Popular Routes chart.
  * @param {Array<Object>} rides - Filtered ride data.
+ * @param {HTMLCanvasElement} canvasElement - The canvas element to render the chart on.
  */
-function renderPopularRoutesChart(rides) {
-    if (!popularRoutesChartCanvas) return;
+function renderPopularRoutesChart(rides, canvasElement) {
+    if (!canvasElement) return;
 
     const routeCounts = {};
     rides.forEach(ride => {
@@ -1327,12 +1371,8 @@ function renderPopularRoutesChart(rides) {
     const labels = sortedRoutes.map(([route]) => route);
     const data = sortedRoutes.map(([, count]) => count);
 
-    if (popularRoutesChartInstance) {
-        popularRoutesChartInstance.destroy();
-        popularRoutesChartInstance = null; // Explicitly nullify after destruction
-    }
-
-    popularRoutesChartInstance = new Chart(popularRoutesChartCanvas, {
+    // No need to destroy here, as getOrCreateChartCanvas already handles it
+    popularRoutesChartInstance = new Chart(canvasElement, { // Use the passed canvasElement
         type: 'horizontalBar', // Use horizontal bar for better readability of long labels
         data: {
             labels: labels,
@@ -1596,32 +1636,32 @@ onAuthStateChanged(auth, async (user) => {
             const idTokenResult = await user.getIdTokenResult();
             if (idTokenResult.claims.admin) {
                 console.log("Admin user logged in:", user.uid);
-                
-                sessionStorage.setItem('isAdmin', 'true'); 
+
+                sessionStorage.setItem('isAdmin', 'true');
                 const userData = await getUserProfile(user.uid);
                 if (userData && userData.accountStatus === 'Access Granted') {
                     sessionStorage.setItem('currentUserRole', userData.role);
                 }
 
                 if (window.location.pathname.includes('admin_dashboard.html')) {
-                    populateRoleSelector(); 
-                    
+                    populateRoleSelector();
+
                     // Set default date range for analytics to past 30 days
                     const today = new Date();
                     const thirtyDaysAgo = new Date(today);
                     thirtyDaysAgo.setDate(today.getDate() - 30);
                     analyticsEndDate.value = today.toISOString().split('T')[0];
                     analyticsStartDate.value = thirtyDaysAgo.toISOString().split('T')[0];
-                    
+
                     // IMPORTANT: Activate the default tab *before* fetching and rendering data
                     // to ensure elements are visible for rendering.
                     document.getElementById('userManagementTab')?.classList.add('active');
                     document.querySelector('.tab-button[data-tab="userManagementTab"]')?.classList.add('active');
 
                     fetchAllUsers(); // This will trigger analytics chart updates
-                    setupRidesLiveMonitoring(); 
-                    setupAnnouncementsLiveMonitoring(); 
-                    
+                    setupRidesLiveMonitoring();
+                    setupAnnouncementsLiveMonitoring();
+
                     // Initial chart render will be handled by fetchAllUsers and setupRidesLiveMonitoring
                     // No need for an extra updateAnalyticsCharts() call here.
                 }
